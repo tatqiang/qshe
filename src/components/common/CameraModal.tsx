@@ -123,12 +123,6 @@ export const CameraModal: React.FC<CameraModalProps> = ({
         {/* Header */}
         <div className="flex justify-between items-center p-4 text-white">
           <h2 className="text-lg font-semibold">Take Photo</h2>
-          <button
-            onClick={handleClose}
-            className="p-2 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors"
-          >
-            <X size={24} />
-          </button>
         </div>
 
         {/* Camera View */}

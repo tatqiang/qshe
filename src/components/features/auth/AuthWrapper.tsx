@@ -11,7 +11,7 @@ interface AuthWrapperProps {
 }
 
 // Public routes that don't require authentication
-const PUBLIC_ROUTES = ['/invite/', '/register/', '/complete-profile', '/reset-password'];
+const PUBLIC_ROUTES = ['/invite/', '/register/', '/complete-profile', '/reset-password', '/public/'];
 
 export const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
   const [showRegistration, setShowRegistration] = useState(false);
@@ -24,6 +24,13 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
 
   // Check if current route is public
   const isPublicRoute = PUBLIC_ROUTES.some(route => location.pathname.startsWith(route));
+  
+  console.log('🔍 AuthWrapper render:', { 
+    isAuthenticated, 
+    isLoading, 
+    currentPath: location.pathname,
+    isPublicRoute 
+  });
   
   // Special handling for profile completion - check for valid stored state
   const isProfileCompletionWithStoredState = () => {
@@ -56,9 +63,14 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
   const shouldBypassAuth = isPublicRoute || isProfileCompletionWithStoredState();
 
   useEffect(() => {
+    console.log('🔍 [DEBUG] AuthWrapper useEffect triggered', { shouldBypassAuth, pathname: location.pathname });
+    
     // Only check auth status if not on public route or profile completion with stored state
     if (!shouldBypassAuth) {
+      console.log('🔍 [DEBUG] Dispatching checkAuthStatus...');
       dispatch(checkAuthStatus());
+    } else {
+      console.log('🔍 [DEBUG] Bypassing auth check (public route)');
     }
   }, [dispatch, shouldBypassAuth]);
 
@@ -80,8 +92,41 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
     );
   }
 
+  // If authenticated, clear any saved redirect path (login flow complete)
+  if (isAuthenticated) {
+    const savedPath = sessionStorage.getItem('redirect_after_login');
+    if (savedPath) {
+      console.log('✅ User authenticated, clearing saved redirect path:', savedPath);
+      sessionStorage.removeItem('redirect_after_login');
+    }
+  }
+
   // Show login/registration if not authenticated
   if (!isAuthenticated) {
+    // Save current path for redirect after login
+    // CRITICAL: Only save if:
+    // 1. Not already on login page
+    // 2. Not already in the middle of a login flow (no existing saved path)
+    // This prevents infinite redirect loops
+    const existingSavedPath = sessionStorage.getItem('redirect_after_login');
+    if (location.pathname !== '/' && 
+        location.pathname !== '/login' && 
+        !existingSavedPath) {
+      const fullPath = location.pathname + location.search + location.hash;
+      console.log('💾 Saving redirect path for after login:', fullPath);
+      sessionStorage.setItem('redirect_after_login', fullPath);
+    } else if (existingSavedPath) {
+      console.log('⏸️ Already have saved path, not overwriting:', existingSavedPath);
+    }
+    
+    console.log('🔐 AuthWrapper: User not authenticated, showing login page', { 
+      isAuthenticated, 
+      isLoading, 
+      showRegistration,
+      currentPath: location.pathname,
+      savedRedirectPath: existingSavedPath
+    });
+    
     return (
       <>
         {showRegistration ? (

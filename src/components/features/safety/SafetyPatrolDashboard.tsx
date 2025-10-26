@@ -11,6 +11,7 @@ import { getRiskCategories, getRiskItems } from '../../../lib/api/riskApi'; // I
 
 // Global state management - Use optional project selection
 import { useAppContext } from '../../../contexts/AppContext';
+import { useUserId } from '../../../hooks/useGlobalState';
 
 import type { 
   SafetyPatrol, 
@@ -22,6 +23,7 @@ import type {
 const SafetyPatrolDashboard: React.FC = () => {
   // Use optional project selection - show all patrols if no project selected
   const { project, projectId } = useAppContext();
+  const userId = useUserId();
   
   const [currentView, setCurrentView] = useState<'loading' | 'list' | 'create' | 'edit' | 'view' | 'corrective-actions'>('loading');
   const [selectedPatrol, setSelectedPatrol] = useState<SafetyPatrol | null>(null);
@@ -80,11 +82,17 @@ const SafetyPatrolDashboard: React.FC = () => {
     photos: string[]
   ) => {
     console.log('📝 Creating patrol...', { 
-      projectCode: project?.project_code
+      projectCode: project?.project_code,
+      userId
     });
     
     if (!project) {
       alert('Please select a project first to create a new patrol');
+      return;
+    }
+
+    if (!userId) {
+      alert('User authentication required to create patrol');
       return;
     }
 
@@ -93,7 +101,7 @@ const SafetyPatrolDashboard: React.FC = () => {
       const newPatrol = await SafetyPatrolService.createPatrol({
         ...data,
         projectId: project.id
-      }, photos);
+      }, photos, userId);
       
       if (newPatrol) {
         console.log('✅ Patrol created successfully');
@@ -203,21 +211,22 @@ const SafetyPatrolDashboard: React.FC = () => {
       case 'list':
       default:
         return (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Safety Patrol Dashboard</h1>
-                <p className="text-gray-600">
+          <div className="space-y-4 sm:space-y-6">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Safety Patrol Dashboard</h1>
+                <p className="text-xs sm:text-sm text-gray-600 truncate">
                   {project 
                     ? `Project: ${project.name} (${project.project_code})`
                     : 'Showing all patrols across all projects'
                   }
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-shrink-0">
                 <Button
                   onClick={() => setCurrentView('create')}
                   disabled={!project}
+                  className="text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2"
                 >
                   Create New Patrol
                 </Button>
@@ -250,7 +259,7 @@ const SafetyPatrolDashboard: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-2 py-4 sm:px-4 sm:py-8">
       {renderCurrentView()}
     </div>
   );

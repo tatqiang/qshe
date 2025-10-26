@@ -19,26 +19,26 @@ export const Card: React.FC<CardProps> = ({
 }) => {
   const paddingClasses = {
     none: '',
-    sm: 'p-3',
-    md: 'p-6',
-    lg: 'p-8'
+    sm: 'p-3 sm:p-4',
+    md: 'p-4 sm:p-6',
+    lg: 'p-6 sm:p-8'
   };
 
   return (
     <div className={`bg-white rounded-lg shadow-sm border border-gray-200 ${className}`}>
       {(title || subtitle || actions) && (
-        <div className={`border-b border-gray-200 ${paddingClasses[padding]} ${padding === 'none' ? 'p-6' : ''}`}>
+        <div className={`border-b border-gray-200 ${paddingClasses[padding]} ${padding === 'none' ? 'p-4 sm:p-6' : ''}`}>
           <div className="flex items-center justify-between">
             <div>
               {title && (
-                <h3 className="text-lg font-medium text-gray-900">{title}</h3>
+                <h3 className="text-base sm:text-lg font-medium text-gray-900">{title}</h3>
               )}
               {subtitle && (
-                <p className="mt-1 text-sm text-gray-600">{subtitle}</p>
+                <p className="mt-1 text-xs sm:text-sm text-gray-600">{subtitle}</p>
               )}
             </div>
             {actions && (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-1.5 sm:space-x-2">
                 {actions}
               </div>
             )}

@@ -6,8 +6,12 @@ import {
   DocumentTextIcon, 
   UsersIcon, 
   ClipboardDocumentListIcon,
+  ClipboardDocumentCheckIcon,
   UserPlusIcon,
-  WrenchScrewdriverIcon
+  UserGroupIcon,
+  WrenchScrewdriverIcon,
+  FolderIcon,
+  Cog6ToothIcon
 } from '@heroicons/react/24/outline';
 import { useUserRole } from '../common/RoleGuard';
 import type { NavigationItem } from '../../types';
@@ -22,11 +26,18 @@ const navigationItems: NavigationItem[] = [
   { id: 'patrol', label: 'Safety Patrol', icon: 'ShieldCheckIcon', path: '/patrol' },
   { id: 'ptw', label: 'Permit to Work', icon: 'DocumentTextIcon', path: '/ptw' },
   { id: 'toolbox', label: 'Toolbox Meetings', icon: 'ClipboardDocumentListIcon', path: '/toolbox' },
-  { id: 'users', label: 'Users', icon: 'UsersIcon', path: '/users' },
+  { id: 'members', label: 'Members', icon: 'UserGroupIcon', path: '/admin/members' },
 ];
 
-// Admin-only navigation items
+// Admin-only navigation items (visible to both admin and system_admin)
 const adminNavigationItems: NavigationItem[] = [
+  { id: 'admin-users', label: 'Users', icon: 'UsersIcon', path: '/users' },
+  { id: 'admin-audit', label: 'Safety Audit', icon: 'ClipboardDocumentCheckIcon', path: '/audit' },
+];
+
+// System admin-only navigation items
+const systemAdminNavigationItems: NavigationItem[] = [
+  { id: 'admin-form-config', label: 'Form Config', icon: 'Cog6ToothIcon', path: '/admin/project-form-config' },
   { id: 'admin-system', label: 'System Settings', icon: 'WrenchScrewdriverIcon', path: '/admin/system' },
 ];
 
@@ -35,19 +46,29 @@ const iconMap = {
   ShieldCheckIcon,
   DocumentTextIcon,
   ClipboardDocumentListIcon,
+  ClipboardDocumentCheckIcon,
   UsersIcon,
   UserPlusIcon,
+  UserGroupIcon,
   WrenchScrewdriverIcon,
+  FolderIcon,
+  Cog6ToothIcon,
 };
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const location = useLocation();
-  const { isSystemAdmin, user, role } = useUserRole();
+  const { isSystemAdmin, isAdmin, user, role } = useUserRole();
 
-  // Debug logging
-  console.log('Sidebar - user:', user);
-  console.log('Sidebar - role:', role);
-  console.log('Sidebar - isSystemAdmin:', isSystemAdmin);
+  // Enhanced debug logging
+  console.log('🔍 [SIDEBAR DEBUG] ===================');
+  console.log('  user object:', user);
+  console.log('  user.role:', user?.role);
+  console.log('  role variable:', role);
+  console.log('  isSystemAdmin:', isSystemAdmin);
+  console.log('  isAdmin:', isAdmin);
+  console.log('  Expected for admin menu: isAdmin === true');
+  console.log('  Admin menu will show:', isAdmin ? '✅ YES' : '❌ NO');
+  console.log('========================================');
 
   return (
     <>
@@ -103,8 +124,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               );
             })}
 
-            {/* Admin-only navigation items */}
-            {isSystemAdmin && (
+            {/* Admin navigation items */}
+            {isAdmin && (
               <>
                 <div className="mt-6 mb-3 px-4">
                   <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -112,6 +133,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   </h3>
                 </div>
                 {adminNavigationItems.map((item) => {
+                  const IconComponent = iconMap[item.icon as keyof typeof iconMap];
+                  const isActive = location.pathname.startsWith(item.path);
+                  
+                  return (
+                    <Link
+                      key={item.id}
+                      to={item.path}
+                      onClick={() => onClose()}
+                      className={`
+                        flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors
+                        ${isActive 
+                          ? 'bg-orange-100 text-orange-700 border-r-2 border-orange-700' 
+                          : 'text-gray-700 hover:bg-gray-100'
+                        }
+                      `}
+                    >
+                      <IconComponent className="w-5 h-5 mr-3" />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+                
+                {/* System Admin Only Items */}
+                {isSystemAdmin && systemAdminNavigationItems.map((item) => {
                   const IconComponent = iconMap[item.icon as keyof typeof iconMap];
                   const isActive = location.pathname.startsWith(item.path);
                   

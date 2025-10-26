@@ -1,0 +1,21 @@
+create table public.safety_audit_requirement_revisions (
+  id uuid not null default gen_random_uuid (),
+  category_id uuid null,
+  revision_number integer not null,
+  effective_date date null default CURRENT_DATE,
+  is_active boolean null default true,
+  approved_by uuid null,
+  approval_date timestamp with time zone null,
+  change_notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint safety_audit_requirement_revisions_pkey primary key (id),
+  constraint safety_audit_requirement_revisions_unique_category_rev unique (category_id, revision_number),
+  constraint safety_audit_requirement_revisions_approved_by_fkey foreign KEY (approved_by) references users (id),
+  constraint safety_audit_requirement_revisions_category_id_fkey foreign KEY (category_id) references safety_audit_categories (id) on delete CASCADE,
+  constraint safety_audit_requirement_revisions_revision_check check ((revision_number >= 0))
+) TABLESPACE pg_default;
+
+create index IF not exists idx_safety_audit_revisions_category on public.safety_audit_requirement_revisions using btree (category_id) TABLESPACE pg_default;
+
+create index IF not exists idx_safety_audit_revisions_active on public.safety_audit_requirement_revisions using btree (category_id, is_active) TABLESPACE pg_default;

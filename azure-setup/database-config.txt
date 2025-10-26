@@ -1,0 +1,6 @@
+# Azure PostgreSQL Configuration 
+VITE_AZURE_DB_HOST= 
+VITE_AZURE_DB_NAME=qshe_management 
+VITE_AZURE_DB_USER=qshe_admin 
+VITE_AZURE_DB_PASSWORD=FrKk72nND0oR+5Zl 
+VITE_AZURE_DB_SSL_MODE=require 

@@ -1,0 +1,19 @@
+create table public.member_application_documents (
+  id uuid not null default gen_random_uuid (),
+  member_application_id uuid not null,
+  document_type text not null,
+  file_name text not null,
+  file_path text not null,
+  file_url text not null,
+  file_size integer null,
+  mime_type text null,
+  description text null,
+  uploaded_at timestamp with time zone null default now(),
+  created_at timestamp with time zone null default now(),
+  constraint member_application_documents_pkey primary key (id),
+  constraint member_application_documents_member_application_id_fkey foreign KEY (member_application_id) references member_applications (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_member_application_documents_app on public.member_application_documents using btree (member_application_id) TABLESPACE pg_default;
+
+create index IF not exists idx_member_application_documents_type on public.member_application_documents using btree (document_type) TABLESPACE pg_default;

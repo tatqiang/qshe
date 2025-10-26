@@ -1,0 +1,49 @@
+create table public.member_companies (
+  id uuid not null default gen_random_uuid (),
+  member_application_id uuid not null,
+  company_id uuid not null,
+  start_date date null,
+  end_date date null,
+  position text null,
+  status character varying(20) null default 'active'::character varying,
+  notes text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  updated_by uuid null,
+  constraint member_companies_pkey primary key (id),
+  constraint member_companies_member_application_id_company_id_key unique (member_application_id, company_id),
+  constraint member_companies_company_fkey foreign KEY (company_id) references companies (id) on delete CASCADE,
+  constraint member_companies_member_fkey foreign KEY (member_application_id) references member_applications (id) on delete CASCADE,
+  constraint member_companies_created_by_fkey foreign KEY (created_by) references users (id),
+  constraint member_companies_updated_by_fkey foreign KEY (updated_by) references users (id),
+  constraint member_companies_status_check check (
+    (
+      (status)::text = any (
+        (
+          array[
+            'active'::character varying,
+            'inactive'::character varying,
+            'terminated'::character varying
+          ]
+        )::text[]
+      )
+    )
+  )
+) TABLESPACE pg_default;
+
+create index IF not exists idx_member_companies_member on public.member_companies using btree (member_application_id) TABLESPACE pg_default;
+
+create index IF not exists idx_member_companies_company on public.member_companies using btree (company_id) TABLESPACE pg_default;
+
+create index IF not exists idx_member_companies_status on public.member_companies using btree (status) TABLESPACE pg_default;
+
+create index IF not exists idx_member_companies_dates on public.member_companies using btree (start_date, end_date) TABLESPACE pg_default;
+
+create index IF not exists idx_member_companies_member_status on public.member_companies using btree (member_application_id, status) TABLESPACE pg_default;
+
+create index IF not exists idx_member_companies_company_status on public.member_companies using btree (company_id, status) TABLESPACE pg_default;
+
+create trigger trigger_member_companies_updated_at BEFORE
+update on member_companies for EACH row
+execute FUNCTION update_updated_at ();

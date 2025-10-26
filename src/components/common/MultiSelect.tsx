@@ -102,7 +102,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
   return (
     <div className="relative" ref={dropdownRef}>
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
           {label}
         </label>
       )}
@@ -110,7 +110,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
       {/* Selected Options Display */}
       <div
         className={`
-          min-h-[42px] w-full px-3 py-2 border border-gray-300 rounded-md bg-white
+          min-h-[38px] sm:min-h-[42px] w-full px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md bg-white
           focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500
           ${disabled ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : 'cursor-pointer'}
         `}
@@ -119,32 +119,32 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex-1 flex flex-wrap gap-1">
             {selectedOptions.length === 0 ? (
-              <span className="text-gray-500">{placeholder}</span>
+              <span className="text-xs sm:text-sm text-gray-500">{placeholder}</span>
             ) : (
               selectedOptions.map(option => (
                 <span
                   key={option.id}
-                  className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800"
+                  className="inline-flex items-center px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md text-[10px] sm:text-xs font-medium bg-blue-100 text-blue-800"
                   style={option.color ? { backgroundColor: `${option.color}20`, color: option.color } : {}}
                 >
-                  {option.icon && <span className="mr-1">{option.icon}</span>}
-                  {option.name}
+                  {option.icon && <span className="mr-0.5 sm:mr-1 text-xs sm:text-sm">{option.icon}</span>}
+                  <span className="truncate max-w-[80px] sm:max-w-none">{option.name}</span>
                   <button
                     type="button"
-                    className="ml-1 hover:bg-blue-200 rounded-full p-0.5"
+                    className="ml-0.5 sm:ml-1 hover:bg-blue-200 rounded-full p-0.5"
                     onClick={(e) => {
                       e.stopPropagation();
                       removeOption(option.id);
                     }}
                   >
-                    <XMarkIcon className="h-3 w-3" />
+                    <XMarkIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                   </button>
                 </span>
               ))
             )}
           </div>
           <ChevronDownIcon
-            className={`h-5 w-5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+            className={`h-4 w-4 sm:h-5 sm:w-5 text-gray-400 transition-transform flex-shrink-0 ml-1 ${isOpen ? 'rotate-180' : ''}`}
           />
         </div>
       </div>
@@ -154,25 +154,25 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
         <div className={`absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg ${maxHeight} overflow-hidden`}>
           {/* Search Input */}
           {searchable && (
-            <div className="p-2 border-b border-gray-200">
+            <div className="p-1.5 sm:p-2 border-b border-gray-200">
               <input
                 ref={searchInputRef}
                 type="text"
                 placeholder="Search options..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           )}
 
           {/* Select All / Deselect All */}
           {allowSelectAll && (
-            <div className="p-2 border-b border-gray-200 flex gap-2">
+            <div className="p-1.5 sm:p-2 border-b border-gray-200 flex gap-2">
               <button
                 type="button"
                 onClick={handleSelectAll}
-                className="text-xs text-blue-600 hover:text-blue-800"
+                className="text-[10px] sm:text-xs text-blue-600 hover:text-blue-800"
               >
                 Select All
               </button>
@@ -180,7 +180,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
               <button
                 type="button"
                 onClick={handleDeselectAll}
-                className="text-xs text-red-600 hover:text-red-800"
+                className="text-[10px] sm:text-xs text-red-600 hover:text-red-800"
               >
                 Deselect All
               </button>
@@ -190,7 +190,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
           {/* Options List */}
           <div className="overflow-y-auto max-h-48">
             {Object.keys(groupedOptions).length === 0 ? (
-              <div className="p-3 text-sm text-gray-500 text-center">
+              <div className="p-2 sm:p-3 text-xs sm:text-sm text-gray-500 text-center">
                 No options found
               </div>
             ) : (
@@ -198,7 +198,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
                 <div key={category}>
                   {/* Category Header */}
                   {showCategories && category && (
-                    <div className="px-3 py-2 text-xs font-semibold text-gray-500 bg-gray-50 border-b border-gray-200">
+                    <div className="px-2 py-1.5 sm:px-3 sm:py-2 text-[10px] sm:text-xs font-semibold text-gray-500 bg-gray-50 border-b border-gray-200">
                       {category}
                     </div>
                   )}
@@ -210,7 +210,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
                       <div
                         key={option.id}
                         className={`
-                          px-3 py-2 cursor-pointer hover:bg-gray-50
+                          px-2 py-1.5 sm:px-3 sm:py-2 cursor-pointer hover:bg-gray-50
                           ${isSelected ? 'bg-blue-50' : ''}
                         `}
                         onClick={() => handleOptionToggle(option.id)}
@@ -220,25 +220,25 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => {}} // Handled by onClick
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-3"
+                            className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-2 sm:mr-3 flex-shrink-0"
                           />
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-0">
                             <div className="flex items-center">
                               {option.icon && (
-                                <span className="mr-2 text-lg">{option.icon}</span>
+                                <span className="mr-1 sm:mr-2 text-sm sm:text-lg flex-shrink-0">{option.icon}</span>
                               )}
                               {option.color && (
                                 <div
-                                  className="w-3 h-3 rounded-full mr-2"
+                                  className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full mr-1 sm:mr-2 flex-shrink-0"
                                   style={{ backgroundColor: option.color }}
                                 />
                               )}
-                              <span className="text-sm font-medium text-gray-900">
+                              <span className="text-xs sm:text-sm font-medium text-gray-900 truncate">
                                 {option.name}
                               </span>
                             </div>
                             {option.description && (
-                              <div className="text-xs text-gray-500 mt-1">
+                              <div className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1 truncate">
                                 {option.description}
                               </div>
                             )}
@@ -254,7 +254,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
 
           {/* Selected Count */}
           {selectedIds.length > 0 && (
-            <div className="px-3 py-2 bg-gray-50 border-t border-gray-200 text-xs text-gray-600">
+            <div className="px-2 py-1.5 sm:px-3 sm:py-2 bg-gray-50 border-t border-gray-200 text-[10px] sm:text-xs text-gray-600">
               {selectedIds.length} item{selectedIds.length !== 1 ? 's' : ''} selected
             </div>
           )}

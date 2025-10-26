@@ -513,12 +513,17 @@ const SafetyPatrolForm: React.FC<SafetyPatrolFormProps> = ({
       return;
     }
 
+    if (!userId) {
+      alert('User authentication required to approve corrective action');
+      return;
+    }
+
     executeApproval(async () => {
       const result = await SafetyPatrolService.approveCorrectiveAction(actionId, {
         reviewDescription: verificationDescription,
         photos: verificationPhotos,
-        verifiedBy: currentUser?.email || 'Unknown'
-      });
+        verifiedBy: userId
+      }, userId);
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to approve corrective action');
@@ -533,12 +538,17 @@ const SafetyPatrolForm: React.FC<SafetyPatrolFormProps> = ({
       return;
     }
 
+    if (!userId) {
+      alert('User authentication required to reject corrective action');
+      return;
+    }
+
     executeRejection(async () => {
       const result = await SafetyPatrolService.rejectCorrectiveAction(actionId, {
         reviewDescription: verificationDescription,
         photos: verificationPhotos,
-        verifiedBy: currentUser?.email || 'Unknown'
-      });
+        verifiedBy: userId
+      }, userId);
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to reject corrective action');
@@ -564,12 +574,18 @@ const SafetyPatrolForm: React.FC<SafetyPatrolFormProps> = ({
       return;
     }
 
+    if (!userId) {
+      alert('User authentication required to create corrective actions');
+      return;
+    }
+
     // Use the action hook to handle submission with loading state
     executeCorrectiveAction(async () => {
       const result = await SafetyPatrolService.createCorrectiveAction(
         patrolId,
         correctiveActionDescription,
-        correctiveActionPhotos
+        correctiveActionPhotos,
+        userId
       );
 
       if (!result.success) {
@@ -925,29 +941,29 @@ const SafetyPatrolForm: React.FC<SafetyPatrolFormProps> = ({
   };
 
   return (
-    <div className={isViewMode ? 'space-y-6' : ''}>
+    <div className={isViewMode ? 'space-y-3 sm:space-y-6' : ''}>
       {/* Form Header with Edit Button */}
       {(isViewMode || isEditMode) && initialData && (
-        <div className="mb-6">
+        <div className="mb-3 sm:mb-6">
           <div className="flex-1">
             {/* Title section - full width */}
-            <div className="mb-2">
-              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 leading-tight sm:leading-normal">
+            <div className="mb-1.5 sm:mb-2">
+              <h1 className="text-base sm:text-xl md:text-2xl font-bold text-gray-900 leading-tight sm:leading-normal">
                 {initialData.title || 'Safety Patrol'}
               </h1>
             </div>
             
             {/* Status Badge - separate row for mobile */}
             {(initialData as SafetyPatrol).status && (
-              <div className="mb-2">
-                <span className={`px-3 py-1 rounded-full text-xs sm:text-sm font-medium flex items-center w-fit ${getStatusColor((initialData as SafetyPatrol).status)}`}>
+              <div className="mb-1.5 sm:mb-2">
+                <span className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs md:text-sm font-medium flex items-center w-fit ${getStatusColor((initialData as SafetyPatrol).status)}`}>
                   {getStatusIcon((initialData as SafetyPatrol).status)}
                   <span className="ml-1">{getStatusLabel((initialData as SafetyPatrol).status)}</span>
                 </span>
               </div>
             )}
             
-            <div className="text-gray-600 mt-1 space-y-1">
+            <div className="text-xs sm:text-sm text-gray-600 mt-1 space-y-0.5 sm:space-y-1">
               <p>{isViewMode ? 'Viewing patrol details' : 'Editing patrol details'}</p>
               
               {/* Creator and Edit Time Information */}
@@ -958,11 +974,20 @@ const SafetyPatrolForm: React.FC<SafetyPatrolFormProps> = ({
                 
                 return (
                   <div className="text-sm space-y-1">
-                    {patrol?.createdByUser && (
+                    {(patrol?.createdByUser || patrol?.createdBy) && (
                       <p>
                         <span className="font-medium">Created by:</span>{' '}
-                        {patrol.createdByUser.firstName} {patrol.createdByUser.lastName}
-                        {isCreator && <span className="text-green-600 ml-1">(You)</span>}
+                        {patrol?.createdByUser ? (
+                          <>
+                            {patrol.createdByUser.firstName} {patrol.createdByUser.lastName}
+                            {isCreator && <span className="text-green-600 ml-1">(You)</span>}
+                          </>
+                        ) : (
+                          <>
+                            User ID: {patrol?.createdBy?.substring(0, 8)}...
+                            {isCreator && <span className="text-green-600 ml-1">(You)</span>}
+                          </>
+                        )}
                       </p>
                     )}
                     {timeInfo && (
@@ -1060,32 +1085,161 @@ const SafetyPatrolForm: React.FC<SafetyPatrolFormProps> = ({
                 </h2>
                 <div className="space-y-4">
                   {existingCorrectiveActions.map((action) => (
-                    <div key={action.id} className="bg-white border rounded-lg">
+                    <div key={action.id}>
                       {/* Content - Use Detail View in View Mode, Form in Edit Mode */}
                       {editingActionId !== action.id ? (
-                        <div className="p-6">
-                          <CorrectiveActionDetailView
-                            action={action}
-                            onPhotoClick={openPhotoModal}
-                            onVerificationPhotoClick={openVerificationPhotoModal}
-                            canEdit={currentUser?.id === action.assigned_to || currentUser?.role === 'admin' || currentUser?.role === 'system_admin'}
-                            onEdit={() => handleEditAction(action.id)}
-                            onEditVerification={() => handleEditVerification(action.id)}
-                            onOpenVerification={() => handleOpenVerification(action.id)}
-                            onCreateCorrection={(patrolId) => {
-                              console.log('🔧 Creating correction for patrol:', patrolId);
-                              setShowCorrectiveActionForm(true);
-                            }}
-                            currentUser={currentUser}
-                            isVerificationFormOpen={showVerificationForm === action.id}
-                            allCorrectiveActions={existingCorrectiveActions}
-                            isCorrectiveActionFormOpen={showCorrectiveActionForm}
-                            patrolData={initialData}
-                          />
-                        </div>
+                        <CorrectiveActionDetailView
+                          action={action}
+                          onPhotoClick={openPhotoModal}
+                          onVerificationPhotoClick={openVerificationPhotoModal}
+                          canEdit={currentUser?.id === action.assigned_to || currentUser?.role === 'admin' || currentUser?.role === 'system_admin'}
+                          onEdit={() => handleEditAction(action.id)}
+                          onEditVerification={() => handleEditVerification(action.id)}
+                          onOpenVerification={() => handleOpenVerification(action.id)}
+                          onCreateCorrection={(patrolId) => {
+                            console.log('🔧 Creating correction for patrol:', patrolId);
+                            setShowCorrectiveActionForm(true);
+                          }}
+                          currentUser={currentUser}
+                          isVerificationFormOpen={showVerificationForm === action.id}
+                          allCorrectiveActions={existingCorrectiveActions}
+                          isCorrectiveActionFormOpen={showCorrectiveActionForm}
+                          patrolData={initialData}
+                          verificationFormContent={
+                            showVerificationForm === action.id ? (
+                              <div>
+                                <h6 className="font-medium text-yellow-900 mb-3 sm:mb-4 text-sm sm:text-base">📋 Verification</h6>
+                                
+                                {/* Review Description */}
+                                <div className="mb-3 sm:mb-4">
+                                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                                    Review Description
+                                  </label>
+                                  <textarea
+                                    rows={3}
+                                    value={verificationDescription}
+                                    onChange={(e) => setVerificationDescription(e.target.value)}
+                                    className="w-full px-2 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Add your review comments and verification notes..."
+                                  />
+                                </div>
+                                
+                                {/* Verification Photos */}
+                                <div className="mb-3 sm:mb-4">
+                                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                                    Photo
+                                  </label>
+                                  <PatrolPhotoUpload
+                                    onPhotosUploaded={setVerificationPhotos}
+                                    patrolId={patrolId}
+                                    initialPhotos={verificationPhotos}
+                                    maxPhotos={5}
+                                    showPreview
+                                    className="border-2 border-dashed border-gray-300 rounded-lg p-2 sm:p-4"
+                                  />
+                                </div>
+                                
+                                {/* Verify By */}
+                                <div className="mb-3 sm:mb-4">
+                                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                                    Verify By
+                                  </label>
+                                  <div className="flex items-center space-x-2 sm:space-x-3 w-full px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md bg-gray-100">
+                                    {currentUser && (
+                                      <>
+                                        <div className="flex-shrink-0">
+                                          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                            <span className="text-xs sm:text-sm font-medium text-green-600">
+                                              {(() => {
+                                                if (currentUserFullName) {
+                                                  const names = currentUserFullName.split(' ');
+                                                  if (names.length >= 2) {
+                                                    return `${names[0].charAt(0)}${names[1].charAt(0)}`.toUpperCase();
+                                                  } else {
+                                                    return names[0].charAt(0).toUpperCase();
+                                                  }
+                                                } else if (currentUser?.email) {
+                                                  return currentUser.email.charAt(0).toUpperCase();
+                                                }
+                                                return 'U';
+                                              })()}
+                                            </span>
+                                          </div>
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">
+                                            {currentUserFullName || currentUser?.email?.split('@')[0] || 'Current User'}
+                                          </p>
+                                          <p className="text-[10px] sm:text-xs text-gray-500">Verification Officer</p>
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                                
+                                {/* Verification Results */}
+                                <div className="mb-2 sm:mb-4">
+                                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">
+                                    Verification Results
+                                  </label>
+                                  <div className="flex flex-wrap gap-2">
+                                    <button
+                                      type="button"
+                                      className={`px-3 py-1.5 sm:px-4 sm:py-2 bg-green-600 text-white text-xs sm:text-sm rounded-md hover:bg-green-700 flex items-center space-x-1 sm:space-x-2 ${
+                                        approvalLoading ? 'opacity-50 cursor-not-allowed' : ''
+                                      }`}
+                                      onClick={() => handleVerificationApprove(action.id)}
+                                      disabled={approvalLoading || rejectionLoading}
+                                    >
+                                      {approvalLoading ? (
+                                        <>
+                                          <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-white"></div>
+                                          <span>Approving...</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <span>✓</span>
+                                          <span>Approve</span>
+                                        </>
+                                      )}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className={`px-3 py-1.5 sm:px-4 sm:py-2 bg-red-600 text-white text-xs sm:text-sm rounded-md hover:bg-red-700 flex items-center space-x-1 sm:space-x-2 ${
+                                        rejectionLoading ? 'opacity-50 cursor-not-allowed' : ''
+                                      }`}
+                                      onClick={() => handleVerificationReject(action.id)}
+                                      disabled={approvalLoading || rejectionLoading}
+                                    >
+                                      {rejectionLoading ? (
+                                        <>
+                                          <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-white"></div>
+                                          <span>Rejecting...</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <span>✗</span>
+                                          <span>Reject</span>
+                                        </>
+                                      )}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-300 text-gray-700 text-xs sm:text-sm rounded-md hover:bg-gray-400"
+                                      onClick={handleCloseVerification}
+                                      disabled={approvalLoading || rejectionLoading}
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : null
+                          }
+                        />
                       ) : (
                         /* Edit Mode - Show Form */
-                        <div className="p-6">
+                        <div className="bg-white border rounded-lg p-6">
                           <h4 className="text-lg font-medium text-gray-900 mb-4">✏️ Editing Corrective Action</h4>
                           
                           <div className="space-y-4">
@@ -1153,137 +1307,6 @@ const SafetyPatrolForm: React.FC<SafetyPatrolFormProps> = ({
                               >
                                 <span>❌</span>
                                 <span>Cancel</span>
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Verification Form */}
-                      {showVerificationForm === action.id && (
-                        <div className="mt-6 pt-6 border-t bg-yellow-50 p-4 rounded-lg mx-6 mb-6">
-                          <h6 className="font-medium text-yellow-900 mb-4">📋 Verification</h6>
-                          
-                          {/* Review Description */}
-                          <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Review Description
-                            </label>
-                            <textarea
-                              rows={3}
-                              value={verificationDescription}
-                              onChange={(e) => setVerificationDescription(e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                              placeholder="Add your review comments and verification notes..."
-                            />
-                          </div>
-                          
-                          {/* Verification Photos */}
-                          <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Photo
-                            </label>
-                            <PatrolPhotoUpload
-                              onPhotosUploaded={setVerificationPhotos}
-                              patrolId={patrolId}
-                              initialPhotos={verificationPhotos}
-                              maxPhotos={5}
-                              showPreview
-                              className="border-2 border-dashed border-gray-300 rounded-lg p-4"
-                            />
-                          </div>
-                          
-                          {/* Verify By */}
-                          <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Verify By
-                            </label>
-                            <div className="flex items-center space-x-3 w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100">
-                              {currentUser && (
-                                <>
-                                  <div className="flex-shrink-0">
-                                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                                      <span className="text-sm font-medium text-green-600">
-                                        {(() => {
-                                          if (currentUserFullName) {
-                                            const names = currentUserFullName.split(' ');
-                                            if (names.length >= 2) {
-                                              return `${names[0].charAt(0)}${names[1].charAt(0)}`.toUpperCase();
-                                            } else {
-                                              return names[0].charAt(0).toUpperCase();
-                                            }
-                                          } else if (currentUser?.email) {
-                                            return currentUser.email.charAt(0).toUpperCase();
-                                          }
-                                          return 'U';
-                                        })()}
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <div className="flex-1">
-                                    <p className="text-sm font-medium text-gray-900">
-                                      {currentUserFullName || currentUser?.email?.split('@')[0] || 'Current User'}
-                                    </p>
-                                    <p className="text-xs text-gray-500">Verification Officer</p>
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                          
-                          {/* Verification Results */}
-                          <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-3">
-                              Verification Results
-                            </label>
-                            <div className="flex space-x-3">
-                              <button
-                                type="button"
-                                className={`px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center space-x-2 min-w-[120px] justify-center ${
-                                  approvalLoading ? 'opacity-50 cursor-not-allowed' : ''
-                                }`}
-                                onClick={() => handleVerificationApprove(action.id)}
-                                disabled={approvalLoading || rejectionLoading}
-                              >
-                                {approvalLoading ? (
-                                  <>
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                    <span>Approving...</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <span>✓</span>
-                                    <span>Approve</span>
-                                  </>
-                                )}
-                              </button>
-                              <button
-                                type="button"
-                                className={`px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center space-x-2 min-w-[120px] justify-center ${
-                                  rejectionLoading ? 'opacity-50 cursor-not-allowed' : ''
-                                }`}
-                                onClick={() => handleVerificationReject(action.id)}
-                                disabled={approvalLoading || rejectionLoading}
-                              >
-                                {rejectionLoading ? (
-                                  <>
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                    <span>Rejecting...</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <span>✗</span>
-                                    <span>Reject</span>
-                                  </>
-                                )}
-                              </button>
-                              <button
-                                type="button"
-                                className="px-6 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-                                onClick={handleCloseVerification}
-                                disabled={approvalLoading || rejectionLoading}
-                              >
-                                Cancel
                               </button>
                             </div>
                           </div>
@@ -1565,8 +1588,48 @@ const SafetyPatrolForm: React.FC<SafetyPatrolFormProps> = ({
             )}
 
             {/* Basic Information */}
-            <Card title="Basic Information">
-        <div className="space-y-4">
+            <Card title="Basic Information" padding="sm" className="sm:p-6">
+        <div className="space-y-3 sm:space-y-4">
+          {/* Patrol Issuer Display */}
+          {(() => {
+            const patrol = initialData as SafetyPatrol;
+            return (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 sm:p-4">
+                <div className="flex items-start space-x-2 sm:space-x-3">
+                  <div className="flex-shrink-0">
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs sm:text-base font-semibold">
+                      {currentUser?.firstName?.[0]}{currentUser?.lastName?.[0]}
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-xs sm:text-sm font-medium text-gray-900">Patrol Issuer</h4>
+                    <p className="text-xs sm:text-sm text-gray-700 mt-0.5 sm:mt-1">
+                      {patrol?.createdByUser ? (
+                        <span className="font-medium">
+                          {patrol.createdByUser.firstName} {patrol.createdByUser.lastName}
+                        </span>
+                      ) : currentUser ? (
+                        <span className="font-medium">
+                          {currentUser.firstName} {currentUser.lastName}
+                        </span>
+                      ) : (
+                        <span className="text-gray-500">Not specified</span>
+                      )}
+                    </p>
+                    {currentUser?.email && (
+                      <p className="text-xs text-gray-500 mt-0.5">{currentUser.email}</p>
+                    )}
+                    {isEditMode && patrol?.createdAt && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Created: {new Date(patrol.createdAt).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1651,7 +1714,7 @@ const SafetyPatrolForm: React.FC<SafetyPatrolFormProps> = ({
       </Card>
 
       {/* Risk Assessment */}
-      <Card title="Risk Assessment *">
+      <Card title="Risk Assessment *" padding="sm" className="sm:p-6">
         <RiskMatrix
           selectedLikelihood={likelihood}
           selectedSeverity={severity}
@@ -1664,8 +1727,8 @@ const SafetyPatrolForm: React.FC<SafetyPatrolFormProps> = ({
       </Card>
 
       {/* Risk Categories and Items */}
-      <Card title="Risk Classification">
-        <div className="space-y-4">
+      <Card title="Risk Classification" padding="sm" className="sm:p-6">
+        <div className="space-y-3 sm:space-y-4">
           <Controller
             name="riskCategoryIds"
             control={control}
@@ -1718,26 +1781,26 @@ const SafetyPatrolForm: React.FC<SafetyPatrolFormProps> = ({
       </Card>
 
       {/* Issue Photos */}
-      <Card title="Issue Photos *">
+      <Card title="Issue Photos *" padding="sm" className="sm:p-6">
         <PatrolPhotoUpload
           onPhotosUploaded={handlePhotoUpload}
           patrolId={patrolId} // Pass actual patrolId (undefined for new, real ID for edit)
           initialPhotos={photos}
           maxPhotos={5}
           showPreview
-          className="border-2 border-dashed border-gray-300 rounded-lg p-4"
+          className="border-2 border-dashed border-gray-300 rounded-lg p-2 sm:p-4"
         />
-        <p className="mt-2 text-xs text-gray-500">
+        <p className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-gray-500">
           Take photos showing the defect clearly. You can add up to 5 photos. Photos are uploaded to Cloudflare R2 storage.
         </p>
         
         {/* Remark Field - within the Issue section */}
-        <div className="mt-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="mt-3 sm:mt-6">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
             Remark
           </label>
           <textarea
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+            className="w-full px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
             rows={3}
             placeholder="Additional remarks or notes about the observation (optional)"
             {...register('remark')}

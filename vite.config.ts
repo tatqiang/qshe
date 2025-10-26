@@ -15,6 +15,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3 MB limit
         // Add iOS Safari specific caching strategies
         runtimeCaching: [
           {
@@ -25,6 +26,30 @@ export default defineConfig({
               expiration: {
                 maxEntries: 100,
                 maxAgeSeconds: 60 * 60 * 24 // 24 hours
+              }
+            }
+          },
+          // Cache face-api.js models aggressively
+          {
+            urlPattern: /^https:\/\/raw\.githubusercontent\.com\/justadudewhohacks\/face-api\.js\/master\/weights\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'face-models-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
+              }
+            }
+          },
+          // Cache face-api.js library
+          {
+            urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/npm\/face-api\.js@.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'face-api-library',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
               }
             }
           }

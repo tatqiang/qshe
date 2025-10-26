@@ -1,0 +1,38 @@
+create table public.sub_areas_1 (
+  id uuid not null default gen_random_uuid (),
+  main_area_id uuid not null,
+  sub_area1_name character varying(255) not null,
+  sub_area1_code character varying(50) null,
+  description text null,
+  area_type character varying(50) null default 'floor'::character varying,
+  area_size numeric(10, 2) null,
+  capacity integer null,
+  floor_plan_x integer null,
+  floor_plan_y integer null,
+  floor_number integer null,
+  status character varying(20) null default 'active'::character varying,
+  is_hazardous boolean null default false,
+  requires_permit boolean null default false,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  updated_by uuid null,
+  constraint sub_areas_1_pkey primary key (id),
+  constraint sub_areas_1_main_area_id_sub_area1_name_key unique (main_area_id, sub_area1_name),
+  constraint sub_areas_1_created_by_fkey foreign KEY (created_by) references users (id),
+  constraint sub_areas_1_main_area_id_fkey foreign KEY (main_area_id) references main_areas (id) on delete CASCADE,
+  constraint sub_areas_1_updated_by_fkey foreign KEY (updated_by) references users (id),
+  constraint sub_areas_1_sub_area1_name_check check ((length((sub_area1_name)::text) >= 1))
+) TABLESPACE pg_default;
+
+create index IF not exists idx_sub_areas_1_main_area_id on public.sub_areas_1 using btree (main_area_id) TABLESPACE pg_default;
+
+create index IF not exists idx_sub_areas_1_name on public.sub_areas_1 using gin (
+  to_tsvector('english'::regconfig, (sub_area1_name)::text)
+) TABLESPACE pg_default;
+
+create index IF not exists idx_sub_areas_1_status on public.sub_areas_1 using btree (status) TABLESPACE pg_default;
+
+create index IF not exists idx_sub_areas_1_floor on public.sub_areas_1 using btree (floor_number) TABLESPACE pg_default;
+
+create index IF not exists idx_sub_areas_1_main_area on public.sub_areas_1 using btree (main_area_id) TABLESPACE pg_default;

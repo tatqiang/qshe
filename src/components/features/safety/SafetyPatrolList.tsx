@@ -126,25 +126,26 @@ const SafetyPatrolList: React.FC<SafetyPatrolListProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Patrol Count Info */}
-      <div className="text-sm text-gray-600">
+      <div className="text-xs sm:text-sm text-gray-600 px-1">
         {filteredPatrols.length} of {patrols.length} patrols
       </div>
 
       {/* Filters */}
-      <Card>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium text-gray-900">Filters</h3>
+      <Card padding="sm" className="sm:p-6">
+        <div className="flex items-center justify-between mb-3 sm:mb-4 gap-2">
+          <h3 className="text-base sm:text-lg font-medium text-gray-900">Filters</h3>
           <Button
             variant="outline"
             size="sm"
             onClick={clearFilters}
+            className="text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-1.5"
           >
             Clear Filters
           </Button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
           <div>
             <MultiSelect
               label="Risk Categories"
@@ -161,7 +162,7 @@ const SafetyPatrolList: React.FC<SafetyPatrolListProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Risk Items</label>
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Risk Items</label>
             <MultiSelectRiskItemFilter
               selectedItemIds={filters.riskItems || []}
               onFilterChange={(ids) => setFilters(prev => ({ ...prev, riskItems: ids }))}
@@ -169,28 +170,28 @@ const SafetyPatrolList: React.FC<SafetyPatrolListProps> = ({
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Date Range</label>
-            <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1.5 sm:space-y-2">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700">Date Range</label>
+            <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
               <input
                 type="date"
                 value={filters.dateFrom || ''}
                 onChange={(e) => setFilters(prev => ({ ...prev, dateFrom: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                className="w-full px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md text-xs sm:text-sm"
                 placeholder="mm/dd/yyyy"
               />
               <input
                 type="date"
                 value={filters.dateTo || ''}
                 onChange={(e) => setFilters(prev => ({ ...prev, dateTo: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                className="w-full px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md text-xs sm:text-sm"
                 placeholder="mm/dd/yyyy"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Status</label>
             <select
               value={filters.status?.[0] || ''}
               onChange={(e) => {
@@ -200,7 +201,7 @@ const SafetyPatrolList: React.FC<SafetyPatrolListProps> = ({
                   status: value ? [value as any] : [] 
                 }));
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white"
+              className="w-full px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md text-xs sm:text-sm bg-white"
             >
               <option value="">All Status</option>
               <option value="open">Open</option>
@@ -211,16 +212,16 @@ const SafetyPatrolList: React.FC<SafetyPatrolListProps> = ({
           </div>
         </div>
 
-        <div className="mt-4 flex items-center justify-end">
-          <div className="flex items-center space-x-2">
-            <label className="text-sm font-medium text-gray-700">Sort by:</label>
+        <div className="mt-3 sm:mt-4 flex items-center justify-end">
+          <div className="flex items-center space-x-1.5 sm:space-x-2">
+            <label className="text-xs sm:text-sm font-medium text-gray-700">Sort by:</label>
             <select
               value={`${sort.field}-${sort.direction}`}
               onChange={(e) => {
                 const [field, direction] = e.target.value.split('-');
                 setSort({ field: field as any, direction: direction as any });
               }}
-              className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+              className="px-2 py-1 sm:px-3 sm:py-1 border border-gray-300 rounded-md text-xs sm:text-sm"
             >
               <option value="patrolDate-desc">Date (Newest)</option>
               <option value="patrolDate-asc">Date (Oldest)</option>

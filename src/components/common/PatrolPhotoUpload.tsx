@@ -160,7 +160,13 @@ export function PatrolPhotoUpload({
   const removePhoto = (index: number) => {
     const newPhotos = photos.filter((_, i) => i !== index);
     setPhotos(newPhotos);
-    console.log(`[PATROL_PHOTO] Removed photo at index ${index}`);
+    
+    // Reset file input to allow re-uploading
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    
+    console.log(`[PATROL_PHOTO] Removed photo at index ${index}, remaining: ${newPhotos.length}`);
   };
 
   const openPreview = (index: number) => {
@@ -178,6 +184,7 @@ export function PatrolPhotoUpload({
         type="file"
         accept={accept}
         multiple
+        {...(accept.includes('image/') && { capture: 'environment' as any })}
         onChange={(e) => handleFileSelect(e.target.files)}
         className="hidden"
         disabled={disabled || uploading}
@@ -193,18 +200,7 @@ export function PatrolPhotoUpload({
           className="flex items-center gap-2"
         >
           <PhotoIcon className="h-4 w-4" />
-          Choose Photos
-        </Button>
-
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => setIsCameraOpen(true)}
-          disabled={!canAddMore || uploading}
-          className="flex items-center gap-2"
-        >
-          <CameraIcon className="h-4 w-4" />
-          Take Photo
+          Choose File
         </Button>
 
         {isR2Configured() && (
@@ -239,7 +235,7 @@ export function PatrolPhotoUpload({
       {showPreview && photos.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
           {photos.map((photo, index) => (
-            <div key={index} className="relative group">
+            <div key={index} className="relative">
               <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
                 <img
                   src={photo}
@@ -262,41 +258,36 @@ export function PatrolPhotoUpload({
                 />
               </div>
 
-              {/* Photo Actions */}
-              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => openPreview(index)}
-                    className="p-2 bg-white bg-opacity-90 rounded-full hover:bg-opacity-100 transition-all shadow-lg"
-                    title="View photo"
-                  >
-                    <EyeIcon className="h-4 w-4 text-gray-700" />
-                  </button>
-                  {!disabled && (
-                    <button
-                      type="button"
-                      onClick={() => removePhoto(index)}
-                      className="p-2 bg-white bg-opacity-90 rounded-full hover:bg-opacity-100 transition-all shadow-lg"
-                      title="Remove photo"
-                    >
-                      <XMarkIcon className="h-4 w-4 text-red-600" />
-                    </button>
-                  )}
-                </div>
-              </div>
-              
-              {/* Always show remove button in bottom right corner for non-disabled mode */}
-              {!disabled && (
+              {/* Always Visible Corner Buttons */}
+              <div className="absolute top-2 left-2 right-2 flex justify-between items-start pointer-events-none">
+                {/* View Button - Top Left */}
                 <button
                   type="button"
-                  onClick={() => removePhoto(index)}
-                  className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all shadow-lg"
-                  title="Remove photo"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openPreview(index);
+                  }}
+                  className="pointer-events-auto p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-all shadow-lg"
+                  title="View photo"
                 >
-                  <XMarkIcon className="h-3 w-3" />
+                  <EyeIcon className="h-5 w-5" />
                 </button>
-              )}
+                
+                {/* Delete Button - Top Right */}
+                {!disabled && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removePhoto(index);
+                    }}
+                    className="pointer-events-auto p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all shadow-lg"
+                    title="Remove photo"
+                  >
+                    <XMarkIcon className="h-5 w-5" />
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>

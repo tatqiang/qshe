@@ -148,8 +148,21 @@ export class DashboardService {
   /**
    * Get recent activities (currently only safety patrol issues)
    */
-  static async getRecentActivities(projectId?: string, limit: number = 10): Promise<RecentActivity[]> {
+  static async getRecentActivities(projectId?: string, limit: number = 10, excludeTestProjects: boolean = true): Promise<RecentActivity[]> {
     try {
+      // First, get list of test project IDs if we need to exclude them
+      let excludedProjectIds: string[] = [];
+      if (excludeTestProjects) {
+        const { data: testProjects } = await supabase
+          .from('projects')
+          .select('id')
+          .eq('is_test_project', true);
+        
+        if (testProjects) {
+          excludedProjectIds = testProjects.map((p: any) => p.id);
+        }
+      }
+
       let query = supabase
         .from('safety_patrols')
         .select(`
@@ -162,10 +175,15 @@ export class DashboardService {
           project_id
         `)
         .order('created_at', { ascending: false })
-        .limit(limit);
+        .limit(limit * 2); // Get more to account for filtering
 
       if (projectId) {
         query = query.eq('project_id', projectId);
+      }
+
+      // Exclude test projects by filtering out their IDs
+      if (excludedProjectIds.length > 0) {
+        query = query.not('project_id', 'in', `(${excludedProjectIds.join(',')})`);
       }
 
       const { data: patrols, error } = await query;
@@ -217,7 +235,8 @@ export class DashboardService {
         };
       });
 
-      return activities;
+      // Return only the requested limit (we fetched more to account for filtering)
+      return activities.slice(0, limit);
 
     } catch (error) {
       console.error('Error fetching recent activities:', error);
@@ -230,52 +249,35 @@ export class DashboardService {
    */
   static async getProjects() {
     try {
-      // Use the same method as ProjectSelection component
-      const { data: supabaseProjects, error } = await supabase.rpc('get_active_projects');
+      console.log('� Fetching projects from Supabase (direct query)...');
       
-      console.log('🔍 Projects query result (using RPC):', { 
-        error: error ? { message: error.message, code: error.code, details: error.details } : null,
-        dataCount: (supabaseProjects as any)?.length || 0,
-        sampleData: (supabaseProjects as any)?.[0] || null
-      });
-
+      // Direct table query (no RPC)
+      const { data: projects, error } = await (supabase as any)
+        .from('projects')
+        .select('*')
+        .eq('status', 'active')
+        .order('project_code', { ascending: true });
+        
       if (error) {
-        console.log('🔧 Supabase RPC error (falling back to direct query):', error.message);
-        
-        // Fallback to direct table query
-        const { data: directProjects, error: directError } = await supabase
-          .from('projects')
-          .select('*')
-          .eq('status', 'active')
-          .order('name');
-          
-        if (directError) {
-          console.error('Direct projects query also failed:', directError);
-          return this.getMockProjects();
-        }
-        
-        if (directProjects && directProjects.length > 0) {
-          return directProjects.map((project: any) => ({
-            id: project.id,
-            name: project.name,
-            project_code: project.project_code || project.code || 'N/A',
-            status: project.status || 'active'
-          }));
-        }
-        
+        console.error('❌ Error fetching projects:', error);
         return this.getMockProjects();
       }
-
-      if (supabaseProjects && Array.isArray(supabaseProjects) && (supabaseProjects as any).length > 0) {
-        console.log('✅ Projects loaded from Supabase RPC:', (supabaseProjects as any).length);
-        return supabaseProjects;
+      
+      if (projects && projects.length > 0) {
+        console.log('✅ Projects loaded from Supabase:', projects.length);
+        return projects.map((project: any) => ({
+          id: project.id,
+          name: project.name,
+          project_code: project.project_code,
+          status: project.status
+        }));
       }
 
       // If no projects found, use mock data
-      console.warn('No projects found, using mock data');
+      console.warn('⚠️ No projects found in database, using mock data');
       return this.getMockProjects();
     } catch (error) {
-      console.error('Error fetching projects:', error);
+      console.error('❌ Failed to fetch projects:', error);
       return this.getMockProjects();
     }
   }

@@ -174,7 +174,7 @@ export const fetchUsers = createAsyncThunk(
           firstName: userData.first_name,
           lastName: userData.last_name,
           positionId: userData.position_id || undefined,
-          positionTitle: position?.position_title || undefined, // From positions join
+          positionTitle: userData.job_title || position?.position_title || undefined, // ✅ FIX: Use job_title first, then positions join
           positionCode: position?.code || undefined, // From positions join (fixed column name)
           positionLevel: position?.level || undefined, // From positions join
           userType: userData.user_type,
@@ -264,17 +264,21 @@ export const fetchCurrentUserProfile = createAsyncThunk(
   'users/fetchCurrentUserProfile',
   async (userId: string, { rejectWithValue }) => {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single();
+      // Since we're removing Supabase dependencies, return a mock user profile
+      // In the future, this should call your Azure SQL Database API
+      console.log('📱 Mock user profile fetch for userId:', userId);
+      
+      const mockUserProfile = {
+        id: userId,
+        email: 'user@example.com',
+        first_name: 'Demo',
+        last_name: 'User',
+        avatar_url: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
 
-      if (error) {
-        return rejectWithValue(error.message);
-      }
-
-      return data;
+      return mockUserProfile;
     } catch (error) {
       return rejectWithValue('Failed to fetch user profile');
     }

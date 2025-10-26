@@ -1,6 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { CameraIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import type { StepProps } from '../types/profile-completion.types';
+import { offlineFaceRecognition } from '../../../services/OfflineFaceRecognitionService';
 
 // Declare face-api.js types
 declare global {
@@ -27,6 +28,10 @@ export const Step3FaceRecognition: React.FC<StepProps> = ({ state, onNext, onBac
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [faceApiReady, setFaceApiReady] = useState(false);
   const [faceDetection, setFaceDetection] = useState<FaceDetectionData | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [modelStatus, setModelStatus] = useState<string>('Initializing...');
+  const [offlineMode, setOfflineMode] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [hasExistingFaceData, setHasExistingFaceData] = useState(false);
 
@@ -53,134 +58,133 @@ export const Step3FaceRecognition: React.FC<StepProps> = ({ state, onNext, onBac
     }
   }, [mode, state.userData, state.photoData]);
 
-  // Load face-api.js models (using exact code from working demo)
+  // Load face recognition with offline support
   useEffect(() => {
-    const loadFaceApi = async () => {
+    const initializeOfflineFaceRecognition = async () => {
       try {
-        console.log('Loading face-api.js models...');
-        
-        // Load face-api.js script
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
-        script.onload = async () => {
-          try {
-            console.log('face-api.js script loaded, loading models...');
-            
-            // Use a reliable CDN that has the models available (exact copy from working demo)
-            const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
-            
-            // Load face-api.js models for full face recognition (TensorFlow.js removed)
-            await Promise.all([
-              window.faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-              window.faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-              window.faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)  // Essential for face descriptors!
-            ]);
-            
-            console.log('✅ All face-api.js models loaded successfully');
-            setFaceApiReady(true);
-          } catch (error) {
-            console.error('Error loading face-api.js models:', error);
-            setError('Failed to load face recognition models. Some features may not work.');
-            setFaceApiReady(true); // Allow basic camera functionality
+        setError(null);
+        setModelStatus('Initializing offline face recognition...');
+        setLoadingProgress(0);
+
+        // Check if we're offline
+        const isOffline = !navigator.onLine;
+        setOfflineMode(isOffline);
+
+        if (isOffline) {
+          setModelStatus('Loading from cache (offline mode)...');
+        } else {
+          setModelStatus('Loading models...');
+        }
+
+        // Initialize with progress callback
+        const success = await offlineFaceRecognition.initializeFaceAPI((progress) => {
+          setLoadingProgress(progress);
+          
+          if (progress < 30) {
+            setModelStatus('Loading face detector...');
+          } else if (progress < 60) {
+            setModelStatus('Loading landmarks detector...');
+          } else if (progress < 80) {
+            setModelStatus('Loading face recognition...');
+          } else if (progress < 100) {
+            setModelStatus('Loading additional models...');
+          } else {
+            setModelStatus('Ready!');
           }
-        };
-        
-        script.onerror = () => {
-          console.error('Failed to load face-api.js script');
-          setError('Failed to load face recognition library.');
-        };
-        
-        document.head.appendChild(script);
-        
-        return () => {
-          if (script.parentNode) {
-            script.parentNode.removeChild(script);
-          }
-        };
+        });
+
+        if (success) {
+          setFaceApiReady(true);
+          setModelStatus(isOffline ? 'Ready (offline mode)' : 'Ready');
+          console.log('✅ Offline face recognition initialized');
+
+          // Check model status
+          const modelStatus = offlineFaceRecognition.getModelStatus();
+          console.log('📊 Model status:', modelStatus);
+
+        } else {
+          throw new Error('Failed to initialize face recognition');
+        }
+
       } catch (error) {
-        console.error('Error in loadFaceApi:', error);
-        setError('Failed to initialize face recognition.');
+        console.error('❌ Face recognition initialization failed:', error);
+        setError(`Face recognition unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        setModelStatus('Failed to load');
       }
     };
 
-    loadFaceApi();
+    initializeOfflineFaceRecognition();
+
+    // Listen for online/offline changes
+    const handleOnline = () => {
+      setOfflineMode(false);
+      console.log('📶 Back online - face recognition models may update');
+    };
+
+    const handleOffline = () => {
+      setOfflineMode(true);
+      console.log('📡 Offline mode - using cached models');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
   // Face analysis function (exact implementation from working demo)
+  // Face analysis function using offline service
   const analyzeFace = useCallback(async () => {
-    if (!videoRef.current || !canvasRef.current || !window.faceapi || !faceApiReady) return;
+    if (!videoRef.current || !canvasRef.current || !faceApiReady) return;
 
     try {
-      // Use face-api.js detection WITH descriptors for duplicate detection (TensorFlow.js removed)
-      const detection = await window.faceapi
-        .detectSingleFace(videoRef.current, new window.faceapi.TinyFaceDetectorOptions())
-        .withFaceLandmarks()
-        .withFaceDescriptor();  // Generate face descriptors for comparison
+      // Use offline face recognition service
+      const result = await offlineFaceRecognition.recognizeFace(videoRef.current, {
+        includeDescriptor: true,
+        includeExpressions: false,
+        timeout: 3000 // 3 second timeout for mobile
+      });
 
-      if (detection) {
+      if (result.success && result.detected) {
         const canvas = canvasRef.current;
         const displaySize = {
           width: videoRef.current.videoWidth,
           height: videoRef.current.videoHeight
         };
-        
-        // Clear canvas and resize
-        window.faceapi.matchDimensions(canvas, displaySize);
+
+        // Match canvas dimensions to video
+        canvas.width = displaySize.width;
+        canvas.height = displaySize.height;
+
+        // Clear previous drawings
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
 
-        // Draw landmarks (simplified - just the key points)
-        const resizedDetection = window.faceapi.resizeResults(detection, displaySize);
-        window.faceapi.draw.drawFaceLandmarks(canvas, resizedDetection);
-
-        // Calculate quality score (exact logic from working demo)
-        const landmarks = detection.landmarks;
-        const box = detection.detection.box;
-        
-        let qualityScore = 0;
-        
-        // Size check (face should be reasonable size)
-        const faceSize = Math.min(box.width, box.height);
-        const sizeScore = Math.min(faceSize / 150, 1) * 25;
-        qualityScore += sizeScore;
-        
-        // Position check (face should be centered)
-        const centerX = box.x + box.width / 2;
-        const centerY = box.y + box.height / 2;
-        const videoCenterX = displaySize.width / 2;
-        const videoCenterY = displaySize.height / 2;
-        
-        const distanceFromCenter = Math.sqrt(
-          Math.pow(centerX - videoCenterX, 2) + 
-          Math.pow(centerY - videoCenterY, 2)
-        );
-        const maxDistance = Math.sqrt(
-          Math.pow(displaySize.width / 2, 2) + 
-          Math.pow(displaySize.height / 2, 2)
-        );
-        const positionScore = (1 - distanceFromCenter / maxDistance) * 25;
-        qualityScore += positionScore;
-        
-        // Landmark confidence (using detection confidence)
-        const confidenceScore = detection.detection.score * 25;
-        qualityScore += confidenceScore;
-        
-        // Landmark count bonus
-        const landmarkScore = Math.min(landmarks._positions.length / 68, 1) * 25;
-        qualityScore += landmarkScore;
-        
-        const finalQuality = Math.min(100, Math.round(qualityScore));
-        const finalConfidence = Math.round(detection.detection.score * 100);
+        // Calculate final quality score
+        const finalQuality = Math.min(100, Math.round(result.qualityScore));
+        const finalConfidence = result.confidence;
 
         setFaceDetection({
           detected: true,
           confidence: finalConfidence,
           qualityScore: finalQuality,
-          landmarks: landmarks._positions.length,
-          faceDescriptor: detection.descriptor // Use the actual face descriptor
+          landmarks: result.landmarks,
+          faceDescriptor: result.faceDescriptor
         });
+
+        console.log('✅ Face detected:', {
+          confidence: finalConfidence,
+          quality: finalQuality,
+          landmarks: result.landmarks,
+          loadTime: Math.round(result.loadingTime),
+          fromCache: result.fromCache
+        });
+
       } else {
         // Clear canvas if no face detected
         const canvas = canvasRef.current;
@@ -195,6 +199,10 @@ export const Step3FaceRecognition: React.FC<StepProps> = ({ state, onNext, onBac
           qualityScore: 0,
           landmarks: 0
         });
+
+        if (result.error) {
+          console.warn('⚠️ Face detection error:', result.error);
+        }
       }
     } catch (error) {
       console.error('Face analysis error:', error);
@@ -496,12 +504,49 @@ export const Step3FaceRecognition: React.FC<StepProps> = ({ state, onNext, onBac
             style={{ display: isStreaming ? 'block' : 'none' }}
           />
           
+          {/* Model Loading Progress */}
+          {!faceApiReady && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg h-64 flex items-center justify-center">
+              <div className="text-center max-w-xs">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3"></div>
+                <p className="text-sm font-medium text-gray-900 mb-2">{modelStatus}</p>
+                {offlineMode && (
+                  <p className="text-xs text-amber-600 mb-3">
+                    📡 Offline mode - using cached models
+                  </p>
+                )}
+                
+                {/* Progress Bar */}
+                <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${loadingProgress}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-gray-500">{Math.round(loadingProgress)}% complete</p>
+                
+                {/* Cache Status */}
+                {offlineMode && (
+                  <div className="mt-3 p-2 bg-amber-50 rounded text-xs text-amber-800">
+                    <p>✅ Running from cached models</p>
+                    <p>Face recognition works offline!</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
           {/* Start Camera placeholder */}
-          {!isStreaming && (
+          {faceApiReady && !isStreaming && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg h-64 flex items-center justify-center">
               <div className="text-center">
                 <CameraIcon className="w-12 h-12 text-blue-400 mx-auto mb-4" />
                 <p className="text-blue-600 mb-4">Click to start face recognition</p>
+                {offlineMode && (
+                  <p className="text-xs text-amber-600">
+                    📡 Offline mode ready
+                  </p>
+                )}
               </div>
             </div>
           )}

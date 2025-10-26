@@ -1,0 +1,2 @@
+project_id	main_area_id	sub_area1_id	sub_area2_id	specific_loaction	company_id	audit_date	audit_criteria_rev	audit_score	audit_note	average_score	auditor_id
+

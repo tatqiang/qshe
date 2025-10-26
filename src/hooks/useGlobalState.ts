@@ -5,6 +5,7 @@
  */
 
 import { useAppContext, useCurrentProject, useCurrentUser } from '../contexts/AppContext';
+import { useAppSelector } from './redux';
 import { ERROR_MESSAGES } from '../constants';
 
 // Hook that provides project ID and handles missing project gracefully
@@ -15,8 +16,20 @@ export const useProjectId = (): string | null => {
 
 // Hook that provides user ID and handles missing user gracefully  
 export const useUserId = (): string | null => {
+  // Try AppContext first (legacy support)
   const currentUser = useCurrentUser();
-  return currentUser?.id || null;
+  
+  // If not in AppContext, try Redux auth store (for Azure AD users)
+  const reduxUser = useAppSelector((state) => state.auth.user);
+  
+  // Return first available user ID
+  const userId = currentUser?.id || reduxUser?.id || null;
+  
+  if (!userId) {
+    console.warn('[useUserId] No user ID available from AppContext or Redux');
+  }
+  
+  return userId;
 };
 
 // Hook that ensures a project is selected, throws error if not
@@ -35,6 +48,8 @@ export const useRequiredUserId = (): string => {
   const userId = useUserId();
   
   if (!userId) {
+    console.error('[useRequiredUserId] User ID required but not available');
+    console.error('[useRequiredUserId] Check AppContext and Redux auth state');
     throw new Error(ERROR_MESSAGES.UNAUTHORIZED);
   }
   

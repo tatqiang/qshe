@@ -14,6 +14,7 @@ interface CorrectiveActionDetailViewProps {
   allCorrectiveActions?: any[]; // Add prop to check for newer corrective actions
   isCorrectiveActionFormOpen?: boolean; // Add prop to track if corrective action form is open
   patrolData?: any; // Add prop to check patrol creator
+  verificationFormContent?: React.ReactNode; // Add prop to render verification form inside
 }
 
 const CorrectiveActionDetailView: React.FC<CorrectiveActionDetailViewProps> = ({
@@ -29,7 +30,8 @@ const CorrectiveActionDetailView: React.FC<CorrectiveActionDetailViewProps> = ({
   isVerificationFormOpen = false,
   allCorrectiveActions = [],
   isCorrectiveActionFormOpen = false,
-  patrolData
+  patrolData,
+  verificationFormContent
 }) => {
   // Check if within 60-minute edit window
   const isWithinEditWindow = (verificationDate: string): boolean => {
@@ -154,8 +156,8 @@ const CorrectiveActionDetailView: React.FC<CorrectiveActionDetailViewProps> = ({
   return (
     <div className="space-y-6">
       {/* Single Yellow Box for All Corrective Action Details */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-        <div className="mb-6">
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 sm:p-6">
+        <div className="mb-4 sm:mb-6">
           {/* Title section - full width */}
           <div className="mb-2">
             <h3 className="font-medium text-yellow-900 flex items-center text-sm sm:text-base md:text-lg">
@@ -560,17 +562,19 @@ const CorrectiveActionDetailView: React.FC<CorrectiveActionDetailViewProps> = ({
                     </div>
                   )}
                 </div>
-                {isVerificationFormOpen && (
-                  <div className="text-sm text-orange-700">
-                    <p>✏️ Verification form is open below...</p>
-                  </div>
-                )}
               </div>
             );
           }
           
           return null;
         })()}
+
+        {/* Render Verification Form Inside the Yellow Box */}
+        {isVerificationFormOpen && verificationFormContent && (
+          <div className="mt-4 pt-4 border-t border-yellow-300">
+            {verificationFormContent}
+          </div>
+        )}
       </div>
     </div>
   );

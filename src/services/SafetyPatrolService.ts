@@ -57,15 +57,25 @@ export class SafetyPatrolService {
    */
   static async createPatrol(
     patrolData: SafetyPatrolFormData,
-    photos: string[] = []
+    photos: string[] = [],
+    currentUserId?: string
   ): Promise<PatrolCreationResult> {
     console.log('🚀 Creating safety patrol...', { 
       title: patrolData.title, 
       photoCount: photos.length,
-      photos: photos 
+      photos: photos,
+      userId: currentUserId 
     });
 
     try {
+      // Try to get userId from parameter first, then fall back to Supabase auth
+      let userId = currentUserId;
+      
+      if (!userId) {
+        const currentUser = await supabase.auth.getUser();
+        userId = currentUser.data.user?.id || null;
+      }
+
       const { data: patrol, error: patrolError } = await (supabase
         .from('safety_patrols') as any)
         .insert({
@@ -98,7 +108,7 @@ export class SafetyPatrolService {
           status: 'open',
           
           // Metadata
-          created_by: (await supabase.auth.getUser()).data.user?.id || null
+          created_by: userId
         })
         .select('id, patrol_number')
         .single();
@@ -338,7 +348,36 @@ export class SafetyPatrolService {
       }
 
       console.log('✅ Patrol fetched');
-      return this.transformToSafetyPatrol(patrol);
+      
+      // Fetch creator user data separately if created_by exists
+      let createdByUser = null;
+      const patrolData = patrol as any;
+      if (patrolData.created_by) {
+        const { data: userData, error: userError } = await (supabase as any)
+          .from('users')
+          .select('id, first_name, last_name, email')
+          .eq('id', patrolData.created_by)
+          .single();
+        
+        if (!userError && userData) {
+          createdByUser = {
+            id: userData.id,
+            firstName: userData.first_name,
+            lastName: userData.last_name,
+            email: userData.email
+          };
+          console.log('✅ Creator user data fetched:', createdByUser);
+        }
+      }
+      
+      const transformedPatrol = this.transformToSafetyPatrol(patrol);
+      
+      // Add creator user data
+      if (createdByUser) {
+        transformedPatrol.createdByUser = createdByUser;
+      }
+      
+      return transformedPatrol;
 
     } catch (error) {
       console.error('❌ Unexpected error fetching patrol:', error);
@@ -627,13 +666,19 @@ export class SafetyPatrolService {
   static async createCorrectiveAction(
     patrolId: string,
     description: string,
-    photoUrls?: string[]
+    photoUrls?: string[],
+    currentUserId?: string
   ): Promise<{ success: boolean; actionId?: string; error?: string }> {
-    console.log('📝 Creating corrective action...', { patrolId, description, photoCount: photoUrls?.length || 0 });
+    console.log('📝 Creating corrective action...', { patrolId, description, photoCount: photoUrls?.length || 0, userId: currentUserId });
 
     try {
-      const currentUser = await supabase.auth.getUser();
-      const userId = currentUser.data.user?.id;
+      // Try to get userId from parameter first, then fall back to Supabase auth
+      let userId = currentUserId;
+      
+      if (!userId) {
+        const currentUser = await supabase.auth.getUser();
+        userId = currentUser.data.user?.id;
+      }
 
       if (!userId) {
         return { success: false, error: 'User not authenticated' };
@@ -883,13 +928,19 @@ export class SafetyPatrolService {
       reviewDescription: string;
       photos: string[];
       verifiedBy: string;
-    }
+    },
+    currentUserId?: string
   ): Promise<{ success: boolean; error?: string }> {
-    console.log('✅ Approving corrective action...', { actionId, verificationData });
+    console.log('✅ Approving corrective action...', { actionId, verificationData, userId: currentUserId });
 
     try {
-      const currentUser = await supabase.auth.getUser();
-      const userId = currentUser.data.user?.id;
+      // Try to get userId from parameter first, then fall back to Supabase auth
+      let userId = currentUserId || verificationData.verifiedBy;
+      
+      if (!userId) {
+        const currentUser = await supabase.auth.getUser();
+        userId = currentUser.data.user?.id;
+      }
 
       if (!userId) {
         return { success: false, error: 'User not authenticated' };
@@ -969,13 +1020,19 @@ export class SafetyPatrolService {
       reviewDescription: string;
       photos: string[];
       verifiedBy: string;
-    }
+    },
+    currentUserId?: string
   ): Promise<{ success: boolean; error?: string }> {
-    console.log('❌ Rejecting corrective action...', { actionId, verificationData });
+    console.log('❌ Rejecting corrective action...', { actionId, verificationData, userId: currentUserId });
 
     try {
-      const currentUser = await supabase.auth.getUser();
-      const userId = currentUser.data.user?.id;
+      // Try to get userId from parameter first, then fall back to Supabase auth
+      let userId = currentUserId || verificationData.verifiedBy;
+      
+      if (!userId) {
+        const currentUser = await supabase.auth.getUser();
+        userId = currentUser.data.user?.id;
+      }
 
       if (!userId) {
         return { success: false, error: 'User not authenticated' };

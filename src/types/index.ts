@@ -143,6 +143,41 @@ export interface Database {
           registered_user_id?: string | null;
         };
       };
+      projects: {
+        Row: {
+          id: string;
+          project_code: string;
+          name: string;
+          description: string | null;
+          project_start: string | null;
+          project_end: string | null;
+          status: 'active' | 'completed' | 'on_hold' | 'extended' | 'cancelled';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          project_code: string;
+          name: string;
+          description?: string | null;
+          project_start?: string | null;
+          project_end?: string | null;
+          status?: 'active' | 'completed' | 'on_hold' | 'extended' | 'cancelled';
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          project_code?: string;
+          name?: string;
+          description?: string | null;
+          project_start?: string | null;
+          project_end?: string | null;
+          status?: 'active' | 'completed' | 'on_hold' | 'extended' | 'cancelled';
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       project_areas: {
         Row: {
           id: string;
@@ -270,6 +305,144 @@ export interface Database {
           annotations?: any | null;
           created_at?: string;
           created_by?: string;
+        };
+      };
+      form_templates: {
+        Row: {
+          id: string;
+          code: string;
+          name: string;
+          name_th: string | null;
+          description: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+          created_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          code: string;
+          name: string;
+          name_th?: string | null;
+          description?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          code?: string;
+          name?: string;
+          name_th?: string | null;
+          description?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string | null;
+        };
+      };
+      member_application_tokens: {
+        Row: {
+          id: string;
+          token: string;
+          project_id: string;
+          form_template_id: string;
+          company_id: string;
+          expires_at: string;
+          max_uses: number;
+          current_uses: number;
+          is_active: boolean;
+          revoked_at: string | null;
+          revoked_by: string | null;
+          created_at: string;
+          created_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          token: string;
+          project_id: string;
+          form_template_id: string;
+          company_id: string;
+          expires_at: string;
+          max_uses?: number;
+          current_uses?: number;
+          is_active?: boolean;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          token?: string;
+          project_id?: string;
+          form_template_id?: string;
+          company_id?: string;
+          expires_at?: string;
+          max_uses?: number;
+          current_uses?: number;
+          is_active?: boolean;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+        };
+      };
+      member_applications: {
+        Row: {
+          id: string;
+          token_id: string | null;
+          submission_number: string;
+          form_template_id: string;
+          project_id: string;
+          company_id: string;
+          status: 'draft' | 'submitted' | 'approved' | 'rejected';
+          form_data: any; // JSONB
+          submitted_at: string | null;
+          approved_at: string | null;
+          approved_by: string | null;
+          rejected_at: string | null;
+          rejected_by: string | null;
+          rejection_reason: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          token_id?: string | null;
+          submission_number?: string;
+          form_template_id: string;
+          project_id: string;
+          company_id: string;
+          status?: 'draft' | 'submitted' | 'approved' | 'rejected';
+          form_data?: any;
+          submitted_at?: string | null;
+          approved_at?: string | null;
+          approved_by?: string | null;
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          token_id?: string | null;
+          submission_number?: string;
+          form_template_id?: string;
+          project_id?: string;
+          company_id?: string;
+          status?: 'draft' | 'submitted' | 'approved' | 'rejected';
+          form_data?: any;
+          submitted_at?: string | null;
+          approved_at?: string | null;
+          approved_by?: string | null;
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
+          created_at?: string;
+          updated_at?: string;
         };
       };
     };

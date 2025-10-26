@@ -93,13 +93,28 @@ export const UserManagement: React.FC = () => {
   });
 
   // Filter users based on search term
-  const filteredUsers = users.filter((user: User) =>
-    user.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = users.filter((user: any) => {
+    const searchFields = [
+      user.full_name || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+      user.email,
+      user.position_title || user.position,
+      user.department,
+      user.employee_id || user.employeeId
+    ].filter(Boolean).join(' ').toLowerCase();
+    
+    return searchFields.includes(searchTerm.toLowerCase());
+  });
 
   const getStatusBadge = (status: string) => {
+    // Handle undefined or null status
+    if (!status) {
+      return (
+        <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">
+          Unknown
+        </span>
+      );
+    }
+
     const statusClasses = {
       active: 'bg-green-100 text-green-800',
       invited: 'bg-yellow-100 text-yellow-800', // User created, awaiting profile completion
@@ -120,6 +135,15 @@ export const UserManagement: React.FC = () => {
   };
 
   const getUserTypeBadge = (userType: string) => {
+    // Handle undefined or null userType
+    if (!userType) {
+      return (
+        <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">
+          Unknown
+        </span>
+      );
+    }
+
     const typeClasses = {
       internal: 'bg-blue-100 text-blue-800',
       external: 'bg-purple-100 text-purple-800',
@@ -344,8 +368,12 @@ export const UserManagement: React.FC = () => {
               <UserIcon className="w-6 h-6 text-blue-600" />
             </div>
             <div className="ml-4">
-              <p className="text-2xl font-bold text-gray-900">{users.length}</p>
-              <p className="text-sm text-gray-600">Total Users</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {users.length}
+              </p>
+              <p className="text-sm text-gray-600">
+                Total Users (SUPABASE)
+              </p>
             </div>
           </div>
         </Card>
@@ -429,27 +457,56 @@ export const UserManagement: React.FC = () => {
               <p className="text-gray-500">No users found</p>
             </div>
           ) : (
-            filteredUsers.map((user: User) => (
+            filteredUsers.map((user: any) => {
+              // Handle both database user format and regular user format
+              const displayUser = {
+                id: user.id,
+                firstName: user.first_name || user.firstName,
+                lastName: user.last_name || user.lastName,
+                email: user.email,
+                status: user.verification_status || user.status,
+                positionTitle: user.job_title || user.position_title || user.positionTitle || user.position,
+                profilePhotoUrl: user.profile_photo_url || user.profilePhotoUrl,
+                department: user.department,
+                authority_level: user.authority_level,
+                worker_type: user.worker_type,
+                _source: user._source || 'redux'
+              };
+              
+              return (
               <div
                 key={user.id}
                 className="flex items-start sm:items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 gap-3"
               >
                 <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
                   <ProfileImage
-                    src={user.profilePhotoUrl}
-                    alt={`${user.firstName} ${user.lastName}`}
-                    fallbackInitials={`${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`}
+                    src={displayUser.profilePhotoUrl}
+                    alt={`${displayUser.firstName} ${displayUser.lastName}`}
+                    fallbackInitials={`${displayUser.firstName?.[0] || ''}${displayUser.lastName?.[0] || ''}`}
                     size="md"
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                       <h3 className="font-medium text-gray-900 truncate">
-                        {user.firstName} {user.lastName}
+                        {user.full_name || `${displayUser.firstName} ${displayUser.lastName}`}
                       </h3>
-                      {getStatusBadge(user.status)}
-                      {getPositionBadge(user.positionTitle)}
+                      {getStatusBadge(displayUser.status)}
+                      {getPositionBadge(displayUser.positionTitle)}
+                      {/* Show data source indicator */}
+                      {user._source && (
+                        <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                          user._source === 'azure' 
+                            ? 'bg-blue-100 text-blue-800' 
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {user._source.toUpperCase()}
+                        </span>
+                      )}
                     </div>
-                    <p className="text-sm text-gray-600 truncate">{user.email}</p>
+                    <p className="text-sm text-gray-600 truncate">{displayUser.email}</p>
+                    {displayUser.department && (
+                      <p className="text-xs text-gray-500 truncate">{displayUser.department}</p>
+                    )}
                   </div>
                 </div>
 
@@ -560,7 +617,8 @@ export const UserManagement: React.FC = () => {
                   )}
                 </div>
               </div>
-            ))
+            );
+            })
           )}
         </div>
       </Card>

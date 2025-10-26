@@ -1,0 +1,29 @@
+create table public.project_form_configs (
+  id uuid not null default gen_random_uuid (),
+  project_id uuid not null,
+  form_template_id uuid not null,
+  company_id uuid null,
+  is_enabled boolean null default true,
+  allow_multiple_submissions boolean null default true,
+  require_approval boolean null default true,
+  notification_emails text[] null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  updated_by uuid null,
+  constraint project_form_configs_pkey primary key (id),
+  constraint project_form_configs_project_id_form_template_id_key unique (project_id, form_template_id),
+  constraint project_form_configs_created_by_fkey foreign KEY (created_by) references users (id),
+  constraint project_form_configs_form_template_id_fkey foreign KEY (form_template_id) references form_templates (id) on delete CASCADE,
+  constraint project_form_configs_company_id_fkey foreign KEY (company_id) references companies (id) on delete set null,
+  constraint project_form_configs_project_id_fkey foreign KEY (project_id) references projects (id) on delete CASCADE,
+  constraint project_form_configs_updated_by_fkey foreign KEY (updated_by) references users (id)
+) TABLESPACE pg_default;
+
+create index IF not exists idx_project_form_configs_project on public.project_form_configs using btree (project_id) TABLESPACE pg_default;
+
+create index IF not exists idx_project_form_configs_company on public.project_form_configs using btree (company_id) TABLESPACE pg_default;
+
+create trigger trigger_project_form_configs_updated_at BEFORE
+update on project_form_configs for EACH row
+execute FUNCTION update_updated_at ();

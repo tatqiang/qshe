@@ -1,18 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '../../common/Card';
 import { Button } from '../../common/Button';
-import { supabase } from '../../../lib/api/supabase'; // Real Supabase integration enabled!
-
-interface Project {
-  id: string;
-  project_code: string;
-  name: string;
-  description?: string;
-  status: 'active' | 'inactive' | 'completed';
-  project_manager_id?: string;
-  created_at: string;
-  updated_at: string;
-}
+import { ProjectService } from '../../../lib/api/projectService';
+import type { Project } from '../../../lib/api/projectService';
 
 interface ProjectSelectionProps {
   onProjectSelected: (project: Project) => void;
@@ -32,117 +22,33 @@ const ProjectSelection: React.FC<ProjectSelectionProps> = ({
   }, []);
 
   const loadProjects = async () => {
+    console.log('🔄 ProjectSelection: Starting to load projects...');
     setLoading(true);
+    
+    // Add timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      console.warn('⏰ ProjectSelection: Query timeout after 10 seconds');
+      setLoading(false);
+      setProjects([]);
+    }, 10000);
+    
     try {
-      // Load projects from Supabase database
-      const { data: supabaseProjects, error } = await supabase.rpc('get_active_projects');
+      // Load projects using ProjectService from Supabase
+      const allProjects = await ProjectService.getAllProjects();
+      console.log('📦 ProjectSelection: All projects from service:', allProjects.length);
       
-      if (error) {
-        console.log('🔧 Supabase RPC error (falling back to demo data):', error.message);
-      } else if (supabaseProjects && Array.isArray(supabaseProjects) && (supabaseProjects as any[]).length > 0) {
-        console.log('✅ Projects loaded from Supabase:', (supabaseProjects as any[]).length);
-        setProjects(supabaseProjects as Project[]);
-        setLoading(false);
-        return;
-      }
+      // Filter only active projects
+      const activeProjects = allProjects.filter(project => project.status === 'active');
       
-      // Using demo data as fallback
-      console.log('📋 Using demo projects (Supabase fallback)');
-      const demoProjects: Project[] = [
-        {
-          id: 'demo-proj-001',
-          project_code: 'AIC',
-          name: 'Downtown Office Complex',
-          description: 'Construction of 25-story office building with underground parking',
-          status: 'active',
-          project_manager_id: undefined, // To be assigned later
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: 'demo-proj-002',
-          project_code: 'RM1',
-          name: 'Highway Bridge Construction',
-          description: 'Construction of 2.5km bridge spanning the Chao Phraya River',
-          status: 'active',
-          project_manager_id: undefined, // To be assigned later
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: 'demo-proj-003',
-          project_code: 'MEGA',
-          name: 'Mega Shopping Mall Project',
-          description: 'Development of large-scale retail complex with entertainment facilities',
-          status: 'active',
-          project_manager_id: undefined, // To be assigned later
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: 'demo-proj-004',
-          project_code: 'GG-U001',
-          name: 'Underground Utility Tunnel',
-          description: 'Construction of underground utility corridor for city infrastructure',
-          status: 'active',
-          project_manager_id: undefined, // To be assigned later
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ];
-
-      setProjects(demoProjects);
-      console.log('✅ Demo projects loaded:', demoProjects.length);
+      console.log('✅ ProjectSelection: Active projects filtered:', activeProjects.length);
+      setProjects(activeProjects);
     } catch (error) {
-      console.warn('🔧 Error loading projects (using demo data):', error);
-      
-      // Fallback demo data
-      const demoProjects: Project[] = [
-        {
-          id: 'demo-proj-001',
-          project_code: 'AIC',
-          name: 'Downtown Office Complex',
-          description: 'Construction of 25-story office building with underground parking',
-          status: 'active',
-          project_manager_id: undefined, // To be assigned later
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: 'demo-proj-002',
-          project_code: 'RM1',
-          name: 'Highway Bridge Construction',
-          description: 'Construction of 2.5km bridge spanning the Chao Phraya River',
-          status: 'active',
-          project_manager_id: undefined, // To be assigned later
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: 'demo-proj-003',
-          project_code: 'MEGA',
-          name: 'Mega Shopping Mall Project',
-          description: 'Development of large-scale retail complex with entertainment facilities',
-          status: 'active',
-          project_manager_id: undefined, // To be assigned later
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: 'demo-proj-004',
-          project_code: 'GG-U001',
-          name: 'Underground Utility Tunnel',
-          description: 'Construction of underground utility corridor for city infrastructure',
-          status: 'active',
-          project_manager_id: undefined, // To be assigned later
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ];
-
-      setProjects(demoProjects);
-      console.log('✅ Fallback demo projects loaded:', demoProjects.length);
+      console.error('❌ ProjectSelection: Failed to load projects:', error);
+      // Set empty array as fallback
+      setProjects([]);
     } finally {
+      clearTimeout(timeoutId);
+      console.log('✅ ProjectSelection: Loading complete, setting loading=false');
       setLoading(false);
     }
   };
@@ -165,8 +71,10 @@ const ProjectSelection: React.FC<ProjectSelectionProps> = ({
   const getStatusColor = (status: Project['status']) => {
     switch (status) {
       case 'active': return 'bg-green-100 text-green-800';
-      case 'inactive': return 'bg-gray-100 text-gray-800';
       case 'completed': return 'bg-blue-100 text-blue-800';
+      case 'on_hold': return 'bg-orange-100 text-orange-800';
+      case 'extended': return 'bg-purple-100 text-purple-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -174,8 +82,10 @@ const ProjectSelection: React.FC<ProjectSelectionProps> = ({
   const getStatusText = (status: Project['status']) => {
     switch (status) {
       case 'active': return 'Active';
-      case 'inactive': return 'Inactive';
       case 'completed': return 'Completed';
+      case 'on_hold': return 'On Hold';
+      case 'extended': return 'Extended';
+      case 'cancelled': return 'Cancelled';
       default: return status;
     }
   };
@@ -258,17 +168,23 @@ const ProjectSelection: React.FC<ProjectSelectionProps> = ({
                 )}
 
                 <div className="grid grid-cols-1 gap-3 text-sm mt-4">
-                  <div>
-                    <span className="font-medium text-gray-700">📝 Description:</span>
-                    <span className="ml-1 text-gray-600">{project.description}</span>
-                  </div>
+                  {project.description && (
+                    <div>
+                      <span className="font-medium text-gray-700">📝 Description:</span>
+                      <span className="ml-1 text-gray-600">{project.description}</span>
+                    </div>
+                  )}
 
-                  <div>
-                    <span className="font-medium text-gray-700">🗓️ Created:</span>
-                    <span className="ml-1 text-gray-600">
-                      {new Date(project.created_at).toLocaleDateString('en-US')}
-                    </span>
-                  </div>
+                  {(project.project_start || project.project_end) && (
+                    <div>
+                      <span className="font-medium text-gray-700">🗓️ Timeline:</span>
+                      <span className="ml-1 text-gray-600">
+                        {project.project_start && `Start: ${new Date(project.project_start).toLocaleDateString('en-US')}`}
+                        {project.project_start && project.project_end && ' | '}
+                        {project.project_end && `End: ${new Date(project.project_end).toLocaleDateString('en-US')}`}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 

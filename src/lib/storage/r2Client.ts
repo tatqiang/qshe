@@ -247,6 +247,169 @@ export const deletePatrolPhoto = async (fileName: string): Promise<boolean> => {
   }
 };
 
+// ==================== SAFETY AUDIT PHOTOS ====================
+
+// Generate unique filename for safety audit photos
+const generateAuditPhotoFileName = (auditId: string, userId: string, index: number, fileExtension: string): string => {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 6);
+  return `safety-audits/${auditId}/photo-${index + 1}-${timestamp}-${random}.${fileExtension}`;
+};
+
+// Upload safety audit photo to R2
+export const uploadAuditPhoto = async (
+  file: File,
+  auditId: string,
+  userId: string,
+  index: number,
+  categoryId?: string,
+  onProgress?: UploadProgressCallback
+): Promise<UploadResult> => {
+  try {
+    const client = createR2Client();
+    const config = getR2Config();
+
+    // Generate filename for audit photo
+    const fileName = generateAuditPhotoFileName(auditId, userId, index, 'jpg');
+
+    // Use mock upload if R2 not configured
+    if (!client || !config) {
+      console.log('Using mock upload for audit photo - R2 not configured');
+      return await mockUpload(file, fileName, onProgress);
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      return { success: false, error: 'Please select an image file' };
+    }
+
+    // Validate file size (10MB limit)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      return { success: false, error: 'Image must be smaller than 10MB' };
+    }
+
+    onProgress?.(10);
+
+    // Resize/compress image
+    const compressedBlob = await resizeImage(file, 1200, 1200, 0.85);
+    onProgress?.(40);
+
+    try {
+      // Convert blob to ArrayBuffer
+      const arrayBuffer = await compressedBlob.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+
+      // Upload to R2
+      const uploadCommand = new PutObjectCommand({
+        Bucket: config.bucketName,
+        Key: fileName,
+        Body: uint8Array,
+        ContentType: 'image/jpeg',
+        Metadata: {
+          auditId: auditId,
+          userId: userId,
+          photoIndex: index.toString(),
+          originalName: file.name,
+          uploadedAt: new Date().toISOString(),
+          photoType: 'safety-audit',
+          ...(categoryId && { categoryId })
+        },
+      });
+
+      await client.send(uploadCommand);
+      onProgress?.(90);
+
+      // Generate public URL
+      const publicUrl = config.publicUrl 
+        ? `${config.publicUrl}/${fileName}`
+        : `https://${config.bucketName}.${config.accountId}.r2.cloudflarestorage.com/${fileName}`;
+
+      onProgress?.(100);
+
+      console.log(`✅ Audit photo uploaded successfully: ${fileName}`);
+
+      return {
+        success: true,
+        url: publicUrl,
+        fileName: fileName,
+      };
+
+    } catch (error: any) {
+      console.error('R2 Upload failed for audit photo:', error);
+      return {
+        success: false,
+        error: error.message || 'Upload failed',
+      };
+    }
+  } catch (error: any) {
+    console.error('Audit photo upload preparation failed:', error);
+    return {
+      success: false,
+      error: error.message || 'Upload preparation failed',
+    };
+  }
+};
+
+// Upload multiple safety audit photos
+export const uploadAuditPhotos = async (
+  files: File[],
+  auditId: string,
+  userId: string,
+  categoryId?: string,
+  onProgress?: (photoIndex: number, progress: number) => void
+): Promise<UploadResult[]> => {
+  const results: UploadResult[] = [];
+  
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    console.log(`📸 Uploading audit photo ${i + 1}/${files.length}: ${file.name}`);
+    
+    const result = await uploadAuditPhoto(
+      file,
+      auditId,
+      userId,
+      i,
+      categoryId,
+      (progress) => onProgress?.(i, progress)
+    );
+    
+    results.push(result);
+    
+    if (!result.success) {
+      console.error(`❌ Failed to upload photo ${i + 1}: ${result.error}`);
+    }
+  }
+  
+  return results;
+};
+
+// Delete safety audit photo from R2
+export const deleteAuditPhoto = async (fileName: string): Promise<boolean> => {
+  try {
+    const client = createR2Client();
+    const config = getR2Config();
+
+    if (!client || !config) {
+      console.log('Mock delete for audit photo - R2 not configured');
+      return true; // Mock success
+    }
+
+    const deleteCommand = new DeleteObjectCommand({
+      Bucket: config.bucketName,
+      Key: fileName,
+    });
+
+    await client.send(deleteCommand);
+    console.log(`✅ Audit photo deleted: ${fileName}`);
+    return true;
+
+  } catch (error) {
+    console.error('Failed to delete audit photo:', error);
+    return false;
+  }
+};
+
 // Generate unique filename
 const generateFileName = (userId: string, fileExtension: string): string => {
   const timestamp = Date.now();

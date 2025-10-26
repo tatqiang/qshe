@@ -3,10 +3,13 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   HomeIcon, 
   ShieldCheckIcon, 
+  ClipboardDocumentCheckIcon,
   DocumentTextIcon, 
   ClipboardDocumentListIcon,
   UsersIcon,
-  WrenchScrewdriverIcon
+  WrenchScrewdriverIcon,
+  UserGroupIcon,
+  Cog6ToothIcon
 } from '@heroicons/react/24/outline';
 import { useUserRole } from '../common/RoleGuard';
 
@@ -15,20 +18,31 @@ const primaryNavItems = [
   { id: 'patrol', label: 'Patrol', icon: ShieldCheckIcon, path: '/patrol' },
   { id: 'ptw', label: 'PTW', icon: DocumentTextIcon, path: '/ptw' },
   { id: 'toolbox', label: 'Toolbox', icon: ClipboardDocumentListIcon, path: '/toolbox' },
-  { id: 'users', label: 'Users', icon: UsersIcon, path: '/users' },
+  { id: 'members', label: 'Members', icon: UserGroupIcon, path: '/admin/members' },
 ];
 
-// Admin-only navigation items
+// Admin-only navigation items (visible to both admin and system_admin)
 const adminNavItems = [
+  { id: 'admin-users', label: 'Users', icon: UsersIcon, path: '/users' },
+  { id: 'admin-audit', label: 'Audit', icon: ClipboardDocumentCheckIcon, path: '/audit' },
+];
+
+// System admin-only navigation items
+const systemAdminNavItems = [
+  { id: 'admin-form-config', label: 'Forms', icon: Cog6ToothIcon, path: '/admin/project-form-config' },
   { id: 'admin-system', label: 'System', icon: WrenchScrewdriverIcon, path: '/admin/system' },
 ];
 
 export const BottomNavigation: React.FC = () => {
   const location = useLocation();
-  const { isSystemAdmin } = useUserRole();
+  const { isSystemAdmin, isAdmin } = useUserRole();
 
-  // Combine navigation items
-  const allNavItems = [...primaryNavItems, ...(isSystemAdmin ? adminNavItems : [])];
+  // Combine navigation items based on role
+  const allNavItems = [
+    ...primaryNavItems, 
+    ...(isAdmin ? adminNavItems : []),
+    ...(isSystemAdmin ? systemAdminNavItems : [])
+  ];
   
   // Check if we have many items that might need scrolling on very small screens
   const hasMultipleItems = allNavItems.length > 4;

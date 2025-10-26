@@ -1,0 +1,9 @@
+# Microsoft Entra External ID Configuration for External Workers 
+# Company Tenant (Internal Staff) 
+VITE_AZURE_COMPANY_TENANT_ID=d6bb4e04-1f12-... 
+VITE_AZURE_COMPANY_DOMAIN=JECthailand.onmicrosoft.com 
+# External ID Tenant (External Workers) 
+VITE_AZURE_EXTERNAL_TENANT_NAME=jectqshe 
+VITE_AZURE_EXTERNAL_CLIENT_ID=68419950-8189-4e0d-b193-9a1fc59c3961 
+VITE_AZURE_EXTERNAL_AUTHORITY=https://login.microsoftonline.com/jectqshe.onmicrosoft.com 
+VITE_AZURE_EXTERNAL_REDIRECT_URI=http://localhost:5173/auth/external/callback 

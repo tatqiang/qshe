@@ -3,13 +3,15 @@ import {
   WrenchScrewdriverIcon,
   ShieldCheckIcon,
   CogIcon,
-  UserGroupIcon
+  UserGroupIcon,
+  FolderIcon
 } from '@heroicons/react/24/outline';
 
 import { Card } from '../../common/Card';
 import { Button } from '../../common/Button';
 import { AdminOnly } from '../../common/RoleGuard';
 import RiskManagement from '../safety/RiskManagement';
+import ProjectManagement from '../projects/ProjectManagement';
 import { getRiskCategories, getRiskItems } from '../../../lib/api/riskApi';
 import { useAppContext } from '../../../contexts/AppContext';
 
@@ -17,7 +19,7 @@ import type { RiskCategory, RiskItem } from '../../../types/safetyPatrol';
 
 export const SystemSettings: React.FC = () => {
   const { project } = useAppContext();
-  const [activeTab, setActiveTab] = useState<'risk-management' | 'system' | 'users'>('risk-management');
+  const [activeTab, setActiveTab] = useState<'projects' | 'risk-management' | 'system' | 'users'>('projects');
   const [riskCategories, setRiskCategories] = useState<RiskCategory[]>([]);
   const [riskItems, setRiskItems] = useState<RiskItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -47,6 +49,12 @@ export const SystemSettings: React.FC = () => {
 
   const tabs = [
     {
+      id: 'projects' as const,
+      label: 'Project Management',
+      icon: FolderIcon,
+      description: 'Create and manage projects from Supabase database'
+    },
+    {
       id: 'risk-management' as const,
       label: 'Risk Management',
       icon: ShieldCheckIcon,
@@ -68,6 +76,12 @@ export const SystemSettings: React.FC = () => {
 
   const renderTabContent = () => {
     switch (activeTab) {
+      case 'projects':
+        return (
+          <div className="space-y-6">
+            <ProjectManagement />
+          </div>
+        );
       case 'risk-management':
         return (
           <div className="space-y-6">
@@ -77,11 +91,6 @@ export const SystemSettings: React.FC = () => {
                 Manage risk categories and risk items that are available for safety patrol assessments.
                 Changes here will affect all future safety patrols.
               </p>
-              {project && (
-                <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
-                  <strong>Current Project:</strong> {project.name} ({project.project_code})
-                </div>
-              )}
             </div>
             
             {loading ? (
@@ -150,52 +159,52 @@ export const SystemSettings: React.FC = () => {
 
   return (
     <AdminOnly>
-      <div className="container mx-auto px-4 py-8">
-        <div className="space-y-6">
+      <div className="container mx-auto px-2 py-4 sm:px-4 sm:py-8">
+        <div className="space-y-3 sm:space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <WrenchScrewdriverIcon className="h-8 w-8 text-blue-600" />
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">System Settings</h1>
-                <p className="text-gray-600">
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <WrenchScrewdriverIcon className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">System Settings</h1>
+                <p className="text-xs sm:text-sm text-gray-600">
                   Manage system-wide configuration and administrative features
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Tabs */}
-          <Card>
-            <div className="border-b border-gray-200">
-              <nav className="-mb-px flex space-x-8">
-                {tabs.map((tab) => {
-                  const IconComponent = tab.icon;
-                  const isActive = activeTab === tab.id;
-                  
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`
-                        flex items-center py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap
-                        ${isActive 
-                          ? 'border-blue-500 text-blue-600' 
-                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                        }
-                      `}
-                    >
-                      <IconComponent className="w-5 h-5 mr-2" />
-                      {tab.label}
-                    </button>
-                  );
-                })}
-              </nav>
-            </div>
+          {/* Tabs - Outside Card */}
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex flex-wrap gap-2 sm:gap-4 md:gap-8">
+              {tabs.map((tab) => {
+                const IconComponent = tab.icon;
+                const isActive = activeTab === tab.id;
+                
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`
+                      flex items-center py-2 sm:py-3 px-1 sm:px-2 border-b-2 font-medium text-[10px] sm:text-xs md:text-sm
+                      ${isActive 
+                        ? 'border-blue-500 text-blue-600' 
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }
+                    `}
+                  >
+                    <IconComponent className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 mr-0.5 sm:mr-1 md:mr-2 flex-shrink-0" />
+                    <span className="hidden sm:inline">{tab.label}</span>
+                    <span className="inline sm:hidden truncate max-w-[60px]">{tab.label.split(' ')[0]}</span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
 
-            <div className="p-6">
-              {renderTabContent()}
-            </div>
+          {/* Content Card */}
+          <Card padding="sm" className="sm:p-6">
+            {renderTabContent()}
           </Card>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { ArrowRightOnRectangleIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { Sidebar } from './Sidebar';
 import { BottomNavigation } from './BottomNavigation';
@@ -21,6 +21,7 @@ export const MainLayout: React.FC = () => {
   const [sessionInfo, setSessionInfo] = useState<any>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.auth);
   const { currentUser: fullUserProfile } = useAppSelector((state) => state.users);
   const currentProject = useCurrentProject();
@@ -28,8 +29,29 @@ export const MainLayout: React.FC = () => {
   // iOS Debug panel hook
   const { showDebug, setShowDebug } = useTripleTapDebug();
 
-  const handleLogout = () => {
-    dispatch(logoutUser());
+  const handleLogout = async () => {
+    console.log('🚪 Logout clicked - clearing all data and redirecting...');
+    
+    try {
+      // 1. Dispatch logout action (clears Redux state)
+      await dispatch(logoutUser()).unwrap();
+    } catch (error) {
+      console.error('❌ Logout action failed (continuing anyway):', error);
+    }
+    
+    // 2. Force clear all storage (backup in case logout action failed)
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+      console.log('✅ All storage cleared');
+    } catch (error) {
+      console.error('❌ Storage clear failed:', error);
+    }
+    
+    // 3. Force page reload and redirect to root (login page)
+    // Use replace to prevent back button from returning to authenticated page
+    console.log('🔄 Redirecting to login page...');
+    window.location.replace('/');
   };
 
   const handleUserProfileClick = () => {

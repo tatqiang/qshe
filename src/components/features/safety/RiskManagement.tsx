@@ -319,73 +319,56 @@ const RiskManagement: React.FC<RiskManagementProps> = ({
             </Card>
           )}
 
-          {/* Items Table */}
-          <Card>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Category
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Description
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {riskItems.map((item) => (
-                    <tr key={item.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+          {/* Items List - Card View */}
+          {riskItems.length === 0 ? (
+            <Card padding="sm" className="sm:p-8 text-center">
+              <p className="text-gray-500 text-sm sm:text-base">
+                No risk items found. Add the first one above.
+              </p>
+            </Card>
+          ) : (
+            <div className="space-y-3 sm:space-y-4">
+              {riskItems.map((item) => (
+                <Card key={item.id} padding="sm" className="sm:p-6 hover:shadow-lg transition-shadow">
+                  <div className="flex items-start justify-between mb-2 sm:mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">
                         {item.name}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          item.category === 'equipment' ? 'bg-blue-100 text-blue-800' :
-                          item.category === 'procedure' ? 'bg-green-100 text-green-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {item.category}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {item.description || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => editItem(item)}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            <PencilIcon className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => deleteItem(item.id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {riskItems.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
-                        No risk items found. Add the first one above.
-                      </td>
-                    </tr>
+                      </h4>
+                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        item.category === 'equipment' ? 'bg-blue-100 text-blue-800' :
+                        item.category === 'procedure' ? 'bg-green-100 text-green-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {item.category}
+                      </span>
+                    </div>
+                    <div className="flex space-x-1 sm:space-x-2 ml-2 flex-shrink-0">
+                      <button
+                        onClick={() => editItem(item)}
+                        className="p-1 sm:p-1.5 text-gray-400 hover:text-blue-600"
+                        title="Edit"
+                      >
+                        <PencilIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                      </button>
+                      <button
+                        onClick={() => deleteItem(item.id)}
+                        className="p-1 sm:p-1.5 text-gray-400 hover:text-red-600"
+                        title="Delete"
+                      >
+                        <TrashIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                      </button>
+                    </div>
+                  </div>
+                  {item.description && (
+                    <p className="text-xs sm:text-sm text-gray-600 mt-2">
+                      {item.description}
+                    </p>
                   )}
-                </tbody>
-              </table>
+                </Card>
+              ))}
             </div>
-          </Card>
+          )}
         </div>
       )}
     </div>

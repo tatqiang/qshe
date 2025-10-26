@@ -411,34 +411,57 @@ export const logoutUser = createAsyncThunk(
   'auth/logoutUser',
   async (_, { rejectWithValue }) => {
     try {
-      // Always clear session manager first
+      console.log('🔄 logoutUser: Starting logout process');
+      
+      // 1. Clear session manager first (most important)
       sessionManager.clearSession();
-      console.log('🧹 Session manager cleared');
+      console.log('✅ logoutUser: Session manager cleared');
 
-      // Use mock logout in development mode
-      if (USE_MOCK_AUTH) {
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-        return; // Mock logout always succeeds
+      // 2. Clear localStorage items
+      try {
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key) keysToRemove.push(key);
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+        console.log('✅ logoutUser: LocalStorage cleared');
+      } catch (e) {
+        console.warn('⚠️ localStorage clear error:', e);
       }
 
-      // Production Supabase logout with error handling
+      // 3. Try Azure AD logout (if applicable) - don't wait for it
+      try {
+        const { azureAuthService } = await import('../lib/auth/azureAuthService');
+        if (azureAuthService.isLoggedIn()) {
+          console.log('� logoutUser: Azure AD logout detected');
+          // Note: Azure logout will redirect, so this may not complete
+          azureAuthService.logout().catch(err => {
+            console.warn('⚠️ Azure logout error (non-blocking):', err);
+          });
+        }
+      } catch (azureError) {
+        console.warn('⚠️ Azure check/logout failed (non-critical):', azureError);
+      }
+      
+      // 4. Try Supabase logout (if applicable)
       try {
         const { error } = await supabase.auth.signOut();
         if (error) {
           console.warn('⚠️ Supabase logout error (non-critical):', error.message);
-          // Don't throw error - session manager is already cleared
         } else {
-          console.log('✅ Supabase session cleared');
+          console.log('✅ logoutUser: Supabase session cleared');
         }
       } catch (supabaseError) {
         console.warn('⚠️ Supabase logout failed (non-critical):', supabaseError);
-        // Don't throw error - session manager is already cleared
       }
 
+      console.log('✅ logoutUser: Logout completed');
       return true;
     } catch (error) {
-      console.error('❌ Logout error:', error);
+      console.error('❌ logoutUser: Logout error:', error);
+      // Even on error, clear what we can
+      sessionManager.clearSession();
       return rejectWithValue('Logout failed');
     }
   }
@@ -452,7 +475,11 @@ export const checkAuthStatus = createAsyncThunk(
       const storedSession = sessionManager.restoreSession();
       if (storedSession) {
         console.log('✅ checkAuthStatus: Restored from session manager');
-        return storedSession;
+        // ✅ FIX: Extract the user object from session structure
+        // Session manager returns { user, token, expiresAt } but we need just the user (AuthUser)
+        const authUser = (storedSession as any).user || storedSession;
+        console.log('✅ Extracted AuthUser:', authUser);
+        return authUser as AuthUser;
       }
 
       // Fallback to Supabase session check with error handling
@@ -571,6 +598,16 @@ const authSlice = createSlice({
     clearRegistrationSuccess: (state) => {
       state.registrationSuccess = false;
     },
+    setAzureUser: (state, action) => {
+      state.user = action.payload;
+      state.isAuthenticated = true;
+      state.error = null;
+      state.isLoading = false;
+      
+      // Save session
+      sessionManager.saveSession(action.payload);
+      console.log('✅ AuthSlice: Azure AD user set successfully');
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -615,13 +652,22 @@ const authSlice = createSlice({
       
       // Logout cases
       .addCase(logoutUser.fulfilled, (state) => {
+        console.log('🚪 AuthSlice: logoutUser.fulfilled - Clearing state');
         state.user = null;
         state.isAuthenticated = false;
         state.error = null;
         
         // Clear persistent session
         sessionManager.clearSession();
-        console.log('🚪 AuthSlice: Session cleared on logout');
+        console.log('✅ AuthSlice: Session cleared on logout - isAuthenticated:', state.isAuthenticated);
+      })
+      .addCase(logoutUser.rejected, (state, action) => {
+        console.error('❌ AuthSlice: logoutUser.rejected', action.payload);
+        // Still clear the state even if logout API call failed
+        state.user = null;
+        state.isAuthenticated = false;
+        state.error = null;
+        sessionManager.clearSession();
       })
       
       // Auth check cases
@@ -643,5 +689,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, clearAuth, clearRegistrationSuccess } = authSlice.actions;
+export const { clearError, clearAuth, clearRegistrationSuccess, setAzureUser } = authSlice.actions;
 export default authSlice.reducer;

@@ -1,0 +1,36 @@
+create table public.member_application_tokens (
+  id uuid not null default gen_random_uuid (),
+  token text not null,
+  project_id uuid null,
+  form_template_id uuid not null,
+  company_id uuid not null,
+  is_one_time_use boolean null default false,
+  max_uses integer null default 999,
+  current_uses integer null default 0,
+  expires_at timestamp with time zone not null,
+  prefill_data jsonb null default '{}'::jsonb,
+  created_by uuid null,
+  created_at timestamp with time zone null default now(),
+  last_used_at timestamp with time zone null,
+  is_active boolean null default true,
+  revoked_at timestamp with time zone null,
+  revoked_by uuid null,
+  revoke_reason text null,
+  constraint member_application_tokens_pkey primary key (id),
+  constraint member_application_tokens_token_key unique (token),
+  constraint member_application_tokens_created_by_fkey foreign KEY (created_by) references users (id),
+  constraint member_application_tokens_form_template_id_fkey foreign KEY (form_template_id) references form_templates (id) on delete CASCADE,
+  constraint member_application_tokens_company_id_fkey foreign KEY (company_id) references companies (id) on delete CASCADE,
+  constraint member_application_tokens_project_id_fkey foreign KEY (project_id) references projects (id) on delete set null,
+  constraint member_application_tokens_revoked_by_fkey foreign KEY (revoked_by) references users (id)
+) TABLESPACE pg_default;
+
+create index IF not exists idx_member_application_tokens_token on public.member_application_tokens using btree (token) TABLESPACE pg_default;
+
+create index IF not exists idx_member_application_tokens_project on public.member_application_tokens using btree (project_id) TABLESPACE pg_default;
+
+create index IF not exists idx_member_application_tokens_company on public.member_application_tokens using btree (company_id) TABLESPACE pg_default;
+
+create index IF not exists idx_member_application_tokens_active on public.member_application_tokens using btree (is_active, expires_at) TABLESPACE pg_default;
+
+create index IF not exists idx_member_application_tokens_company_active on public.member_application_tokens using btree (company_id, is_active) TABLESPACE pg_default;

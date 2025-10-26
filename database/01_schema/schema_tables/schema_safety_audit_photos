@@ -1,0 +1,28 @@
+create table public.safety_audit_photos (
+  id uuid not null default gen_random_uuid (),
+  audit_id uuid not null,
+  requirement_id uuid null,
+  photo_url text not null,
+  thumbnail_url text null,
+  caption text null,
+  latitude numeric(10, 8) null,
+  longitude numeric(11, 8) null,
+  taken_at timestamp with time zone null default now(),
+  uploaded_by uuid null,
+  display_order integer null default 0,
+  created_at timestamp with time zone null default now(),
+  category_id uuid null,
+  constraint safety_audit_photos_pkey primary key (id),
+  constraint safety_audit_photos_audit_id_fkey foreign KEY (audit_id) references safety_audits (id) on delete CASCADE,
+  constraint safety_audit_photos_category_id_fkey foreign KEY (category_id) references safety_audit_categories (id) on delete set null,
+  constraint safety_audit_photos_requirement_id_fkey foreign KEY (requirement_id) references safety_audit_requirements (id) on delete set null,
+  constraint safety_audit_photos_uploaded_by_fkey foreign KEY (uploaded_by) references users (id) on delete set null
+) TABLESPACE pg_default;
+
+create index IF not exists idx_safety_audit_photos_audit on public.safety_audit_photos using btree (audit_id) TABLESPACE pg_default;
+
+create index IF not exists idx_safety_audit_photos_requirement on public.safety_audit_photos using btree (requirement_id) TABLESPACE pg_default;
+
+create index IF not exists idx_safety_audit_photos_category on public.safety_audit_photos using btree (category_id) TABLESPACE pg_default;
+
+create index IF not exists idx_safety_audit_photos_audit_category on public.safety_audit_photos using btree (audit_id, category_id) TABLESPACE pg_default;

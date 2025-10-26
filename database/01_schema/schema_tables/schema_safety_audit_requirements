@@ -1,0 +1,27 @@
+create table public.safety_audit_requirements (
+  id uuid not null default gen_random_uuid (),
+  revision_id uuid null,
+  item_number integer not null,
+  description_th text not null,
+  description_en text null,
+  criteria_th text not null,
+  criteria_en text null,
+  weight integer not null,
+  display_order integer null default 0,
+  is_optional boolean null default false,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint safety_audit_requirements_pkey primary key (id),
+  constraint safety_audit_requirements_unique_revision_item unique (revision_id, item_number),
+  constraint safety_audit_requirements_revision_id_fkey foreign KEY (revision_id) references safety_audit_requirement_revisions (id) on delete CASCADE,
+  constraint safety_audit_requirements_weight_check check (
+    (
+      (weight >= 1)
+      and (weight <= 5)
+    )
+  )
+) TABLESPACE pg_default;
+
+create index IF not exists idx_safety_audit_requirements_revision on public.safety_audit_requirements using btree (revision_id) TABLESPACE pg_default;
+
+create index IF not exists idx_safety_audit_requirements_item on public.safety_audit_requirements using btree (revision_id, item_number) TABLESPACE pg_default;
