@@ -37,6 +37,9 @@ import { TestFormConfigPage } from './pages/admin/TestFormConfigPage';
 import { MemberApplyPage } from './pages/public/MemberApplyPage';
 import { MemberFormPage } from './pages/public/MemberFormPage';
 import { MemberReportPage } from './pages/public/MemberReportPage';
+import { MaterialsPage } from './pages/Materials';
+import { MaterialsAddPage } from './pages/MaterialsAdd';
+import { MaterialConfigPage } from './pages/admin/MaterialConfigPage';
 
 // Initialize session debug tools in development
 if (import.meta.env.DEV) {
@@ -91,6 +94,8 @@ function App() {
               <Route path="projects" element={<ProjectManagement />} />
               <Route path="patrol" element={<SafetyPatrolDashboard />} />
               <Route path="audit" element={<div>Safety Audit (Coming Soon)</div>} />
+              <Route path="materials" element={<MaterialsPage />} />
+              <Route path="materials/add" element={<MaterialsAddPage />} />
               <Route path="areas-demo" element={<HierarchicalAreasDemo />} />
               <Route path="punch-list-demo" element={<PunchListDemo />} />
               <Route path="global-state-test" element={<GlobalStateTest />} />
@@ -103,6 +108,7 @@ function App() {
               <Route path="admin/users/:userId/edit" element={<EditProfilePage />} />
               <Route path="admin/system" element={<SystemSettings />} />
               <Route path="admin/members" element={<MembersManagementPage />} />
+              <Route path="admin/material-config" element={<MaterialConfigPage />} />
               <Route path="admin/project-form-config" element={<ProjectFormConfigPage />} />
               <Route path="admin/test-form-config" element={<TestFormConfigPage />} />
               <Route path="my-profile/edit" element={<MyProfileEditPage />} />

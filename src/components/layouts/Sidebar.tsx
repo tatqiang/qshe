@@ -11,6 +11,7 @@ import {
   UserGroupIcon,
   WrenchScrewdriverIcon,
   FolderIcon,
+  CubeIcon,
   Cog6ToothIcon
 } from '@heroicons/react/24/outline';
 import { useUserRole } from '../common/RoleGuard';
@@ -26,6 +27,7 @@ const navigationItems: NavigationItem[] = [
   { id: 'patrol', label: 'Safety Patrol', icon: 'ShieldCheckIcon', path: '/patrol' },
   { id: 'ptw', label: 'Permit to Work', icon: 'DocumentTextIcon', path: '/ptw' },
   { id: 'toolbox', label: 'Toolbox Meetings', icon: 'ClipboardDocumentListIcon', path: '/toolbox' },
+  { id: 'materials', label: 'Materials', icon: 'CubeIcon', path: '/materials' },
   { id: 'members', label: 'Members', icon: 'UserGroupIcon', path: '/admin/members' },
 ];
 
@@ -33,6 +35,7 @@ const navigationItems: NavigationItem[] = [
 const adminNavigationItems: NavigationItem[] = [
   { id: 'admin-users', label: 'Users', icon: 'UsersIcon', path: '/users' },
   { id: 'admin-audit', label: 'Safety Audit', icon: 'ClipboardDocumentCheckIcon', path: '/audit' },
+  { id: 'admin-material-config', label: 'Material Config', icon: 'CubeIcon', path: '/admin/material-config' },
 ];
 
 // System admin-only navigation items
@@ -52,6 +55,7 @@ const iconMap = {
   UserGroupIcon,
   WrenchScrewdriverIcon,
   FolderIcon,
+  CubeIcon,
   Cog6ToothIcon,
 };
 

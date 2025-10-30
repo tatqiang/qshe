@@ -9,6 +9,7 @@ import {
   UsersIcon,
   WrenchScrewdriverIcon,
   UserGroupIcon,
+  CubeIcon,
   Cog6ToothIcon
 } from '@heroicons/react/24/outline';
 import { useUserRole } from '../common/RoleGuard';
@@ -18,6 +19,7 @@ const primaryNavItems = [
   { id: 'patrol', label: 'Patrol', icon: ShieldCheckIcon, path: '/patrol' },
   { id: 'ptw', label: 'PTW', icon: DocumentTextIcon, path: '/ptw' },
   { id: 'toolbox', label: 'Toolbox', icon: ClipboardDocumentListIcon, path: '/toolbox' },
+  { id: 'materials', label: 'Materials', icon: CubeIcon, path: '/materials' },
   { id: 'members', label: 'Members', icon: UserGroupIcon, path: '/admin/members' },
 ];
 
@@ -25,6 +27,7 @@ const primaryNavItems = [
 const adminNavItems = [
   { id: 'admin-users', label: 'Users', icon: UsersIcon, path: '/users' },
   { id: 'admin-audit', label: 'Audit', icon: ClipboardDocumentCheckIcon, path: '/audit' },
+  { id: 'admin-material-config', label: 'Config', icon: CubeIcon, path: '/admin/material-config' },
 ];
 
 // System admin-only navigation items

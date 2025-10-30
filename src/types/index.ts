@@ -846,3 +846,6 @@ export interface ApiResponse<T = any> {
   error?: string;
   success: boolean;
 }
+
+// Materials System Types
+export * from './materialSystem';
