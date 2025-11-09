@@ -1,0 +1,39 @@
+create table public.sub_areas_2 (
+  id uuid not null default gen_random_uuid (),
+  sub_area1_id uuid not null,
+  sub_area2_name character varying(255) not null,
+  sub_area2_code character varying(50) null,
+  description text null,
+  area_type character varying(50) null default 'room'::character varying,
+  area_size numeric(10, 2) null,
+  capacity integer null,
+  room_number character varying(50) null,
+  equipment_installed text[] null,
+  safety_equipment text[] null,
+  status character varying(20) null default 'active'::character varying,
+  is_hazardous boolean null default false,
+  requires_permit boolean null default false,
+  access_level character varying(20) null default 'general'::character varying,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  updated_by uuid null,
+  constraint sub_areas_2_pkey primary key (id),
+  constraint sub_areas_2_sub_area1_id_sub_area2_name_key unique (sub_area1_id, sub_area2_name),
+  constraint sub_areas_2_created_by_fkey foreign KEY (created_by) references users (id),
+  constraint sub_areas_2_sub_area1_id_fkey foreign KEY (sub_area1_id) references sub_areas_1 (id) on delete CASCADE,
+  constraint sub_areas_2_updated_by_fkey foreign KEY (updated_by) references users (id),
+  constraint sub_areas_2_sub_area2_name_check check ((length((sub_area2_name)::text) >= 1))
+) TABLESPACE pg_default;
+
+create index IF not exists idx_sub_areas_2_sub_area1_id on public.sub_areas_2 using btree (sub_area1_id) TABLESPACE pg_default;
+
+create index IF not exists idx_sub_areas_2_name on public.sub_areas_2 using gin (
+  to_tsvector('english'::regconfig, (sub_area2_name)::text)
+) TABLESPACE pg_default;
+
+create index IF not exists idx_sub_areas_2_status on public.sub_areas_2 using btree (status) TABLESPACE pg_default;
+
+create index IF not exists idx_sub_areas_2_room_number on public.sub_areas_2 using btree (room_number) TABLESPACE pg_default;
+
+create index IF not exists idx_sub_areas_2_sub_area1 on public.sub_areas_2 using btree (sub_area1_id) TABLESPACE pg_default;

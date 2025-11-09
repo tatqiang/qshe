@@ -1,0 +1,10 @@
+create table public.patrol_risk_categories (
+  id uuid not null default gen_random_uuid (),
+  patrol_id uuid not null,
+  risk_category_id integer not null,
+  created_at timestamp with time zone null default now(),
+  constraint patrol_risk_categories_pkey primary key (id),
+  constraint patrol_risk_categories_unique unique (patrol_id, risk_category_id),
+  constraint patrol_risk_categories_patrol_id_fkey foreign KEY (patrol_id) references safety_patrols (id) on delete CASCADE,
+  constraint patrol_risk_categories_risk_category_id_fkey foreign KEY (risk_category_id) references risk_categories (id)
+) TABLESPACE pg_default;

@@ -1,0 +1,36 @@
+create table public.corrective_actions (
+  id uuid not null default gen_random_uuid (),
+  patrol_id uuid not null,
+  action_number character varying not null,
+  description text not null,
+  action_type public.action_type not null,
+  root_cause_analysis text null,
+  assigned_to uuid null,
+  assigned_date date null default CURRENT_DATE,
+  due_date date not null,
+  status public.action_status not null default 'assigned'::action_status,
+  progress_percentage integer null default 0,
+  verified_by uuid null,
+  verification_date timestamp with time zone null,
+  verification_notes text null,
+  estimated_cost numeric(10, 2) null,
+  actual_cost numeric(10, 2) null,
+  resources_required text[] null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  constraint corrective_actions_pkey primary key (id),
+  constraint corrective_actions_patrol_id_fkey foreign KEY (patrol_id) references safety_patrols (id) on delete CASCADE,
+  constraint corrective_actions_progress_percentage_check check (
+    (
+      (progress_percentage >= 0)
+      and (progress_percentage <= 100)
+    )
+  )
+) TABLESPACE pg_default;
+
+create index IF not exists idx_corrective_actions_patrol_id on public.corrective_actions using btree (patrol_id) TABLESPACE pg_default;
+
+create index IF not exists idx_corrective_actions_assigned_to on public.corrective_actions using btree (assigned_to) TABLESPACE pg_default;
+
+create index IF not exists idx_corrective_actions_due_date on public.corrective_actions using btree (due_date) TABLESPACE pg_default;
