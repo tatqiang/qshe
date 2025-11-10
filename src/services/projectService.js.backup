@@ -1,0 +1,86 @@
+import { supabase } from '@/lib/supabase'
+
+export const projectService = {
+  /**
+   * Get all projects
+   */
+  async getAll() {
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .order('name')
+    
+    if (error) throw error
+    return data
+  },
+
+  /**
+   * Get active projects only
+   */
+  async getActive() {
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('status', 'active')
+      .order('name')
+    
+    if (error) throw error
+    return data
+  },
+
+  /**
+   * Get project by ID
+   */
+  async getById(id) {
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('id', id)
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  /**
+   * Create new project
+   */
+  async create(project) {
+    const { data, error } = await supabase
+      .from('projects')
+      .insert([project])
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  /**
+   * Update project
+   */
+  async update(id, updates) {
+    const { data, error } = await supabase
+      .from('projects')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  /**
+   * Delete project
+   */
+  async delete(id) {
+    const { error } = await supabase
+      .from('projects')
+      .delete()
+      .eq('id', id)
+    
+    if (error) throw error
+    return true
+  }
+}
