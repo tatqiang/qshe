@@ -1,0 +1,18 @@
+create table public.patrol_photos (
+  id uuid not null default gen_random_uuid (),
+  patrol_id uuid null,
+  action_id uuid null,
+  file_path text not null,
+  file_name character varying not null,
+  file_size bigint null,
+  photo_type public.photo_type not null default 'issue'::photo_type,
+  caption text null,
+  taken_at timestamp with time zone null default now(),
+  taken_by uuid null,
+  photo_data text null,
+  created_at timestamp with time zone null default now(),
+  constraint patrol_photos_pkey primary key (id),
+  constraint patrol_photos_patrol_id_fkey foreign KEY (patrol_id) references safety_patrols (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_patrol_photos_patrol_id on public.patrol_photos using btree (patrol_id) TABLESPACE pg_default;

@@ -1,0 +1,10 @@
+create table public.risk_items (
+  id serial not null,
+  name character varying(100) not null,
+  category character varying(50) null,
+  description text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint risk_items_pkey primary key (id),
+  constraint risk_items_name_key unique (name)
+) TABLESPACE pg_default;
