@@ -24,45 +24,65 @@ export const useAuthStore = defineStore('auth', () => {
   const initialize = async (): Promise<void> => {
     loading.value = true
     try {
+      // Clear existing user state first
+      user.value = null
+      azureUser.value = null
+      
       const isLoggedIn = await azureAuthService.isLoggedIn()
-      if (isLoggedIn) {
-        const profile = await azureAuthService.getUserProfile()
-        if (profile) {
-          azureUser.value = profile
-          
-          // Try to get user from Supabase (if configured)
-          try {
-            const { data, error: dbError } = await supabase
-              .from('users')
-              .select('*')
-              .eq('email', profile.email)
-              .single()
-            
-            if (dbError) {
-              console.warn('User not found in database or Supabase not configured:', dbError.message)
-              // Create a basic user object from Azure profile
-              user.value = {
-                id: profile.id,
-                email: profile.email,
-                role: 'user'
-              }
-            } else if (data) {
-              user.value = data
-            }
-          } catch (dbErr) {
-            console.warn('Supabase error (might not be configured):', dbErr)
-            // Use Azure profile as fallback
-            user.value = {
-              id: profile.id,
-              email: profile.email,
-              role: 'user'
-            }
+      if (!isLoggedIn) {
+        console.log('❌ No valid Azure session found')
+        return
+      }
+
+      // Verify we can get a valid access token
+      const token = await azureAuthService.getAccessToken()
+      if (!token) {
+        console.log('❌ Cannot get valid access token')
+        return
+      }
+
+      const profile = await azureAuthService.getUserProfile()
+      if (!profile) {
+        console.log('❌ Cannot get user profile')
+        return
+      }
+
+      azureUser.value = profile
+      
+      // Try to get user from Supabase (if configured)
+      try {
+        const { data, error: dbError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', profile.email)
+          .single()
+        
+        if (dbError) {
+          console.warn('User not found in database or Supabase not configured:', dbError.message)
+          // Create a basic user object from Azure profile
+          user.value = {
+            id: profile.id,
+            email: profile.email,
+            role: 'user'
           }
+        } else if (data) {
+          user.value = data
+        }
+      } catch (dbErr) {
+        console.warn('Supabase error (might not be configured):', dbErr)
+        // Use Azure profile as fallback
+        user.value = {
+          id: profile.id,
+          email: profile.email,
+          role: 'user'
         }
       }
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Unknown error'
       console.error('Auth initialization error:', err)
+      // Clear user on error
+      user.value = null
+      azureUser.value = null
     } finally {
       loading.value = false
     }
