@@ -107,6 +107,12 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
     error.value = null
     try {
+      // Check if azureAuthService is available
+      if (!azureAuthService || typeof azureAuthService.loginWithMicrosoft !== 'function') {
+        console.error('❌ azureAuthService not properly initialized')
+        throw new Error('Authentication service not available')
+      }
+      
       // Login with Azure
       await azureAuthService.loginWithMicrosoft()
       
