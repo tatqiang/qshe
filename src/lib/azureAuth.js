@@ -4,13 +4,13 @@ const msalConfig = {
   auth: {
     clientId: import.meta.env.VITE_AZURE_COMPANY_CLIENT_ID || '618098ec-e3e8-4d7b-a718-c10c23e82407',
     authority: `https://login.microsoftonline.com/${import.meta.env.VITE_AZURE_TENANT_ID || 'd6bb4e04-1f12-4303-95a7-71d94f834f0a'}`,
-    redirectUri: window.location.origin,
-    postLogoutRedirectUri: window.location.origin,
+    redirectUri: window.location.origin + '/',
+    postLogoutRedirectUri: window.location.origin + '/',
     navigateToLoginRequestUrl: false
   },
   cache: {
     cacheLocation: 'localStorage',
-    storeAuthStateInCookie: false
+    storeAuthStateInCookie: true // Enable cookies for mobile support
   }
 }
 
@@ -38,7 +38,15 @@ class AzureAuthService {
   async initializeMsal() {
     try {
       await this.msalInstance.initialize()
-      await this.msalInstance.handleRedirectPromise()
+      
+      // Handle redirect promise (important for mobile redirect flow)
+      const redirectResponse = await this.msalInstance.handleRedirectPromise()
+      if (redirectResponse) {
+        console.log('✅ Redirect login successful:', redirectResponse)
+        // Store the account info
+        this.currentAccount = redirectResponse.account
+      }
+      
       this.initialized = true
       console.log('✅ MSAL initialized successfully')
     } catch (error) {
@@ -52,9 +60,20 @@ class AzureAuthService {
     try {
       await this.ensureInitialized()
       console.log('🔐 Starting Microsoft login...')
-      const response = await this.msalInstance.loginPopup(loginRequest)
-      console.log('✅ Login successful:', response)
-      return response
+      
+      // Use redirect flow on mobile devices, popup on desktop
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+      
+      if (isMobile) {
+        console.log('📱 Mobile detected - using redirect flow')
+        await this.msalInstance.loginRedirect(loginRequest)
+        return null // Redirect will reload the page
+      } else {
+        console.log('💻 Desktop detected - using popup flow')
+        const response = await this.msalInstance.loginPopup(loginRequest)
+        console.log('✅ Login successful:', response)
+        return response
+      }
     } catch (error) {
       console.error('❌ Microsoft login error:', error)
       throw error
