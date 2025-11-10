@@ -28,7 +28,11 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = null
       azureUser.value = null
       
+      console.log('🔍 Initializing auth...')
+      
       const isLoggedIn = await azureAuthService.isLoggedIn()
+      console.log('📊 isLoggedIn:', isLoggedIn)
+      
       if (!isLoggedIn) {
         console.log('❌ No valid Azure session found')
         return
@@ -36,12 +40,18 @@ export const useAuthStore = defineStore('auth', () => {
 
       // Verify we can get a valid access token
       const token = await azureAuthService.getAccessToken()
+      console.log('🔑 Access token:', token ? 'EXISTS' : 'NULL')
+      
       if (!token) {
-        console.log('❌ Cannot get valid access token')
+        console.log('❌ Cannot get valid access token - clearing session')
+        user.value = null
+        azureUser.value = null
         return
       }
 
       const profile = await azureAuthService.getUserProfile()
+      console.log('👤 User profile:', profile ? profile.email : 'NULL')
+      
       if (!profile) {
         console.log('❌ Cannot get user profile')
         return
@@ -65,8 +75,10 @@ export const useAuthStore = defineStore('auth', () => {
             email: profile.email,
             role: 'user'
           }
+          console.log('✅ Created user from Azure profile (fallback)')
         } else if (data) {
           user.value = data
+          console.log('✅ User loaded from database:', data.email, 'Role:', data.role)
         }
       } catch (dbErr) {
         console.warn('Supabase error (might not be configured):', dbErr)
@@ -76,10 +88,13 @@ export const useAuthStore = defineStore('auth', () => {
           email: profile.email,
           role: 'user'
         }
+        console.log('✅ Created user from Azure profile (exception fallback)')
       }
+      
+      console.log('✅ Auth initialization complete. Authenticated:', !!user.value)
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Unknown error'
-      console.error('Auth initialization error:', err)
+      console.error('❌ Auth initialization error:', err)
       // Clear user on error
       user.value = null
       azureUser.value = null

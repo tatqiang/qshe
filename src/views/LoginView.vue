@@ -62,15 +62,21 @@ onMounted(async () => {
     // Let MSAL handle the redirect
     await authStore.initialize()
     loading.value = false
-  }
-  
-  // Check if user is already logged in
-  if (!hasRedirectHash) {
+    
+    if (authStore.isAuthenticated) {
+      router.push('/dashboard')
+    }
+  } else {
+    // Not a redirect - clear any stale auth and check
+    console.log('🔍 Checking existing session...')
     await authStore.initialize()
-  }
-  
-  if (authStore.isAuthenticated) {
-    router.push('/dashboard')
+    
+    if (authStore.isAuthenticated) {
+      console.log('✅ Valid session found, redirecting to dashboard')
+      router.push('/dashboard')
+    } else {
+      console.log('❌ No valid session, staying on login page')
+    }
   }
 })
 

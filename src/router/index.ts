@@ -55,9 +55,16 @@ const router = createRouter({
   routes
 })
 
+// Global flag to track if auth has been checked
+let authChecked = false
+
 // Navigation guard
 router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore()
+  
+  console.log('🚦 Router guard - Going to:', to.path, 'Auth required:', to.meta.requiresAuth)
+  console.log('🚦 Current auth status:', authStore.isAuthenticated)
+  console.log('🚦 Auth already checked:', authChecked)
   
   // Skip auth check if there's a hash (MSAL redirect in progress)
   if (window.location.hash.includes('code=') || window.location.hash.includes('id_token=')) {
@@ -66,20 +73,26 @@ router.beforeEach(async (to, _from, next) => {
     return
   }
   
-  // Initialize auth if not already done
-  if (!authStore.isAuthenticated && to.meta.requiresAuth) {
+  // ALWAYS initialize auth on first navigation
+  if (!authChecked) {
+    console.log('⏳ First navigation - initializing auth...')
     await authStore.initialize()
+    authChecked = true
+    console.log('✅ Auth initialized. Status:', authStore.isAuthenticated)
   }
 
   const requiresAuth = to.meta.requiresAuth as boolean | undefined
 
   if (requiresAuth && !authStore.isAuthenticated) {
     // Redirect to login if route requires auth and user is not authenticated
+    console.log('🚫 Access denied - redirecting to login')
     next({ name: 'login' })
   } else if (to.name === 'login' && authStore.isAuthenticated) {
     // Redirect to dashboard if user is already authenticated
+    console.log('✅ Already authenticated - redirecting to dashboard')
     next({ name: 'dashboard' })
   } else {
+    console.log('✅ Access granted')
     next()
   }
 })
