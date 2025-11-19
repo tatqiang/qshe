@@ -141,12 +141,23 @@ watch(() => props.modelValue, (value) => {
 })
 
 const loadProjects = async () => {
+  console.log('🔍 ProjectSelector - Loading projects')
+  console.log('👤 Current user:', authStore.user)
+  console.log('🔐 User role:', authStore.user?.role)
   await projectStore.loadActiveProjects(authStore.user)
+  console.log('📊 Projects loaded:', projectStore.projects.length)
 }
 
 const selectProject = (project: typeof projectStore.selectedProject) => {
+  // Save the selected project
   projectStore.setProject(project)
+  
+  // Close modal
   closeModal()
+  
+  // Full page reload to ensure all data refreshes cleanly
+  // This prevents stale data issues (stores, materials, etc.)
+  window.location.href = '/dashboard'
 }
 
 const closeModal = () => {

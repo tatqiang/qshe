@@ -1,5 +1,14 @@
 <template>
   <div class="max-w-4xl mx-auto px-4 py-6">
+    <!-- Loading Overlay -->
+    <LoadingOverlay
+      :show="submitting"
+      :title="mode === 'edit' ? 'Updating Patrol...' : 'Creating Patrol...'"
+      :message="mode === 'edit' 
+        ? 'Saving your changes, please wait...' 
+        : 'Processing patrol data and uploading photos...'"
+    />
+
     <!-- Header -->
     <div class="mb-6">
       <div class="flex items-center justify-between mb-4">
@@ -363,13 +372,14 @@
           type="button"
           variant="outline"
           @click="handleCancel"
+          :disabled="submitting"
         >
           Cancel
         </Button>
         <Button
           type="submit"
           variant="primary"
-          :loading="submitting"
+          :disabled="submitting"
         >
           {{ mode === 'edit' ? 'Update Patrol' : 'Create Patrol' }}
         </Button>
@@ -442,6 +452,7 @@ import { useProjectStore } from '@/stores/projectStore'
 import { supabase } from '@/lib/supabase'
 import Card from '@/components/ui/Card.vue'
 import Button from '@/components/ui/Button.vue'
+import LoadingOverlay from '@/components/ui/LoadingOverlay.vue'
 import AreaInput from '@/components/common/AreaInput.vue'
 import MultiSelectModal from '@/components/common/MultiSelectModal.vue'
 import RiskItemsModal from '@/components/common/RiskItemsModal.vue'

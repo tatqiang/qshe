@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import Sidebar from './components/Sidebar.vue'
 import TopNav from './components/layout/TopNav.vue'
@@ -10,6 +10,9 @@ import { useAuthStore } from './stores/authStore'
 const route = useRoute()
 const authStore = useAuthStore()
 
+// Check if current route is a print view
+const isPrintView = computed(() => route.path.includes('/print'))
+
 onMounted(async () => {
   // Initialize authentication
   await authStore.initialize()
@@ -19,6 +22,11 @@ onMounted(async () => {
 <template>
   <!-- Login view (no sidebar/navbar) -->
   <div v-if="route.name === 'login'" class="w-full h-screen">
+    <RouterView />
+  </div>
+
+  <!-- Print view (no navigation) -->
+  <div v-else-if="isPrintView" class="w-full h-screen">
     <RouterView />
   </div>
 
@@ -49,4 +57,33 @@ onMounted(async () => {
 
 <style scoped>
 /* Additional app-level styles */
+</style>
+
+<style>
+/* Global print styles - hide all navigation when printing */
+@media print {
+  /* Hide all navigation elements */
+  nav,
+  .sidebar,
+  .top-nav,
+  .bottom-nav,
+  header,
+  footer,
+  [role="navigation"],
+  .no-print {
+    display: none !important;
+  }
+  
+  /* Reset body for printing */
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+  
+  /* Ensure only print content shows */
+  .print-page {
+    display: block !important;
+  }
+}
 </style>

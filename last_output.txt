@@ -1,0 +1,8 @@
+2025-11-14 20:26:48.413 [error] [Window] ChatSessionStore: Error reading chat session file a71653f7-4960-4e39-b2aa-f869850d2e0c Unable to read file 'c:\Users\snith\AppData\Roaming\Code\User\workspaceStorage\5d934af5c45b8b7d84f87e87cfd97df8\chatSessions\a71653f7-4960-4e39-b2aa-f869850d2e0c.json' (Error: Unable to resolve nonexistent file 'c:\Users\snith\AppData\Roaming\Code\User\workspaceStorage\5d934af5c45b8b7d84f87e87cfd97df8\chatSessions\a71653f7-4960-4e39-b2aa-f869850d2e0c.json')
+2025-11-14 20:26:48.413 [error] [Window] Error: Failed to get model for chat editor. resource: vscode-chat-session://local/YTcxNjUzZjctNDk2MC00ZTM5LWIyYWEtZjg2OTg1MGQyZTBj
+    at XIe.setInput (vscode-file://vscode-app/c:/Users/snith/AppData/Local/Programs/Microsoft%20VS%20Code/resources/app/out/vs/workbench/workbench.desktop.main.js:2216:9184)
+    at async nJe.S (vscode-file://vscode-app/c:/Users/snith/AppData/Local/Programs/Microsoft%20VS%20Code/resources/app/out/vs/workbench/workbench.desktop.main.js:697:58520)
+    at async nJe.L (vscode-file://vscode-app/c:/Users/snith/AppData/Local/Programs/Microsoft%20VS%20Code/resources/app/out/vs/workbench/workbench.desktop.main.js:697:57080)
+    at async nJe.openEditor (vscode-file://vscode-app/c:/Users/snith/AppData/Local/Programs/Microsoft%20VS%20Code/resources/app/out/vs/workbench/workbench.desktop.main.js:697:56162)
+    at async vscode-file://vscode-app/c:/Users/snith/AppData/Local/Programs/Microsoft%20VS%20Code/resources/app/out/vs/workbench/workbench.desktop.main.js:809:23355
+    at async I1i (vscode-file://vscode-app/c:/Users/snith/AppData/Local/Programs/Microsoft%20VS%20Code/resources/app/out/vs/workbench/workbench.desktop.main.js:2216:12059)

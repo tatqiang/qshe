@@ -1,0 +1,29 @@
+create table public.material_templates (
+  id serial not null,
+  material_group_id integer null,
+  title_1 text null,
+  title_2 text null,
+  title_3 text null,
+  title_4 text null,
+  title_5 text null,
+  dimension_group_id integer null,
+  technical_spec_template jsonb null,
+  sort_order integer null default 0,
+  is_active boolean null default true,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  title_1_th text null,
+  title_2_th text null,
+  title_3_th text null,
+  title_4_th text null,
+  title_5_th text null,
+  constraint material_templates_pkey primary key (id),
+  constraint fk_material_templates_dimension_group foreign KEY (dimension_group_id) references dimension_groups (id) on delete set null,
+  constraint material_templates_material_group_id_fkey foreign KEY (material_group_id) references material_groups (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_material_templates_group on public.material_templates using btree (material_group_id) TABLESPACE pg_default;
+
+create index IF not exists idx_material_templates_dimension on public.material_templates using btree (dimension_group_id) TABLESPACE pg_default;
+
+create index IF not exists idx_material_templates_active on public.material_templates using btree (is_active) TABLESPACE pg_default;

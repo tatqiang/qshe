@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 
+// Force reload: 2025-11-16 21:45
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
@@ -47,6 +48,58 @@ const routes: RouteRecordRaw[] = [
     name: 'patrol-detail',
     component: () => import('@/features/patrol/views/PatrolDetailView.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/materials',
+    name: 'materials',
+    component: () => import('@/views/MaterialsView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/materials/add',
+    name: 'materials-add',
+    component: () => import('@/views/MaterialsAddView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/materials/add-to-inventory',
+    name: 'AddMaterialToInventory',
+    component: () => import('@/views/AddMaterialToInventoryView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/materials/receives',
+    name: 'materials-receive-list',
+    component: () => import('@/views/MaterialReceiveListView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/materials/receive/new',
+    name: 'materials-receive-new',
+    component: () => import('@/views/MaterialReceiveView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/materials/receive/:id/print',
+    name: 'materials-receive-print',
+    component: () => import('@/views/MaterialReceivePrintView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/materials/receive/:id',
+    name: 'materials-receive-edit',
+    component: () => import('@/views/MaterialReceiveView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/materials/receive',
+    redirect: '/materials/receives'
+  },
+  {
+    path: '/admin/material-config',
+    name: 'admin-material-config',
+    component: () => import('@/views/admin/MaterialConfigView.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 
@@ -54,6 +107,8 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes
 })
+
+console.log('🔧 Router initialized with routes:', router.getRoutes().map(r => ({ name: r.name, path: r.path })))
 
 // Global flag to track if auth has been checked
 let authChecked = false

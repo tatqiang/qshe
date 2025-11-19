@@ -566,15 +566,19 @@ const fetchPatrolDetails = async () => {
     photos.value = photoData.map((p: any) => ({ ...p, type: 'patrol' }))
 
     const actionData = await patrolService.getActions(patrolId)
+    console.log('🔍 Raw action data from service:', actionData)
     correctiveActions.value = actionData.map((action: any) => {
+      console.log(`🔍 Action ${action.id} photos:`, action.photos)
+      console.log(`🔍 Action ${action.id} verification_photos:`, action.verification_photos)
       // Initialize verification form state for each action
       showVerificationForm.value[action.id] = false
       return {
         ...action,
-        verification_photos: action.verification_photos.map((p: any) => ({ ...p, type: 'verification' })),
-        photos: action.photos.map((p: any) => ({ ...p, type: 'action' }))
+        verification_photos: (action.verification_photos || []).map((p: any) => ({ ...p, type: 'verification' })),
+        photos: (action.photos || []).map((p: any) => ({ ...p, type: 'action' }))
       }
     })
+    console.log('🔍 Final corrective actions:', correctiveActions.value)
 
   } catch (err) {
     console.error('Error fetching patrol details:', err)

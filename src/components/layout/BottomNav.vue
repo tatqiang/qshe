@@ -11,6 +11,8 @@ const allNavItems = [
   { name: 'Dashboard', path: '/dashboard', icon: 'home' },
   { name: 'Patrol', path: '/patrol', icon: 'clipboard' },
   { name: 'Risk', path: '/risk-assessment', icon: 'warning' },
+  { name: 'Materials', path: '/materials', icon: 'package' },
+  { name: 'Config', path: '/material-config', icon: 'settings', requiresAdmin: true },
   { name: 'System', path: '/system', icon: 'cog', requiresAdmin: true }
 ]
 
@@ -36,14 +38,14 @@ const navigate = (path: string) => {
 
 <template>
   <!-- Bottom Navigation for Mobile -->
-  <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-50">
-    <div class="flex justify-around items-center h-16">
+  <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-50 overflow-x-auto">
+    <div class="flex items-center h-16">
       <button
         v-for="item in navItems"
         :key="item.path"
         @click="navigate(item.path)"
         :class="[
-          'flex flex-col items-center justify-center flex-1 h-full transition-colors',
+          'flex flex-col items-center justify-center h-full transition-colors flex-1 min-w-[70px]',
           isActive(item.path)
             ? 'text-[#388087] dark:text-[#6FB3B8]'
             : 'text-gray-600 dark:text-gray-400'
@@ -62,6 +64,16 @@ const navigate = (path: string) => {
         <!-- Warning Icon (Risk) -->
         <svg v-else-if="item.icon === 'warning'" class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        
+        <!-- Package Icon (Materials) -->
+        <svg v-else-if="item.icon === 'package'" class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+        </svg>
+        
+        <!-- Settings Icon (Material Config) -->
+        <svg v-else-if="item.icon === 'settings'" class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
         </svg>
         
         <!-- Cog Icon (System) -->

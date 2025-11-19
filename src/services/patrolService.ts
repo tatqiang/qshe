@@ -459,22 +459,36 @@ export const patrolService = {
             : 'Unknown'
         }
 
-        // Get action photos (using 'evidence' photo_type)
-        const { data: photos } = await supabase
-          .from('patrol_photos')
+        // Get action photos (from corrective_action_photos table)
+        // First check ALL photos for this action
+        const { data: allPhotos } = await supabase
+          .from('corrective_action_photos')
+          .select('*')
+          .eq('action_id', action.id)
+        
+        console.log(`🔍 ALL photos for action ${action.id}:`, allPhotos)
+        
+        const { data: photos, error: photosError } = await supabase
+          .from('corrective_action_photos')
           .select('*')
           .eq('action_id', action.id)
           .eq('photo_type', 'evidence')
         
+        console.log(`🔍 Querying photos for action ${action.id}, photo_type='evidence':`, photos, photosError)
+        
         // Get verification photos (using 'after' photo_type)
-        const { data: verificationPhotos } = await supabase
-          .from('patrol_photos')
+        const { data: verificationPhotos, error: verificationPhotosError } = await supabase
+          .from('corrective_action_photos')
           .select('*')
           .eq('action_id', action.id)
           .eq('photo_type', 'after')
+        
+        console.log(`🔍 Querying verification photos for action ${action.id}, photo_type='after':`, verificationPhotos, verificationPhotosError)
 
-        // Generate URLs for photos
+        // Generate URLs for photos (corrective_action_photos uses r2_url)
         const photosWithUrls = (photos || []).map(photo => {
+          // corrective_action_photos has r2_url field
+          if (photo.r2_url) return { ...photo, url: photo.r2_url }
           if (photo.url) return photo
           if (photo.file_path && !photo.file_path.startsWith('http')) {
             const { data: { publicUrl } } = supabase.storage
@@ -486,6 +500,8 @@ export const patrolService = {
         })
 
         const verificationPhotosWithUrls = (verificationPhotos || []).map(photo => {
+          // corrective_action_photos has r2_url field
+          if (photo.r2_url) return { ...photo, url: photo.r2_url }
           if (photo.url) return photo
           if (photo.file_path && !photo.file_path.startsWith('http')) {
             const { data: { publicUrl } } = supabase.storage

@@ -1,0 +1,80 @@
+-- Material Receive Items: Line items for each receive transaction
+create table public.material_receive_items (
+  id uuid not null default gen_random_uuid(),
+  material_receive_id uuid not null,
+  line_number integer not null,
+  
+  -- What is being received
+  material_template_id integer not null,
+  material_code_id uuid null, -- User-selected material code (required for Step 5.1)
+  dimension_id integer null,
+  material_description text not null,
+  specific_detail text null, -- User-added specific detail for this item
+  
+  -- Quantities
+  unit_of_measure character varying(50) not null default 'PCS'::character varying,
+  unit_of_measure_th character varying(50) null, -- Thai unit: ตัว, เส้น, กระป๋อง, แผ่น, ชิ้น, กล่อง, ถุง, etc.
+  ordered_quantity numeric(15, 3) null, -- From PO if applicable
+  
+  -- Step 5.1: Prepared quantity
+  prepared_quantity numeric(15, 3) not null,
+  
+  -- Step 5.2: Store keeper confirmation (defaults from prepared_quantity)
+  received_quantity numeric(15, 3) null, -- Default = prepared_quantity
+  rejected_quantity numeric(15, 3) null default 0,
+  accepted_quantity numeric(15, 3) generated always as (received_quantity - COALESCE(rejected_quantity, 0)) stored,
+  
+  -- Cost
+  unit_price numeric(15, 2) null,
+  total_price numeric(15, 2) generated always as (COALESCE(accepted_quantity, received_quantity, prepared_quantity) * COALESCE(unit_price, 0)) stored,
+  
+  -- Tracking
+  lot_number character varying(100) null,
+  serial_numbers jsonb null, -- Array of serial numbers if tracked
+  manufacture_date date null,
+  expiry_date date null,
+  
+  -- Quality
+  inspection_status character varying(50) null default 'pending'::character varying, -- pending, passed, failed
+  inspection_notes text null,
+  
+  -- Location assignment
+  bin_location character varying(100) null,
+  rack_location character varying(100) null,
+  
+  -- Remarks for this line item
+  remark text null,
+  
+  -- Links to created inventory
+  material_inventory_id uuid null, -- Links to inventory record created/updated
+  
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  
+  constraint material_receive_items_pkey primary key (id),
+  constraint material_receive_items_receive_line_key unique (material_receive_id, line_number),
+  constraint material_receive_items_receive_id_fkey foreign key (material_receive_id) references material_receives (id) on delete cascade,
+  constraint material_receive_items_template_id_fkey foreign key (material_template_id) references material_templates (id) on delete restrict,
+  constraint material_receive_items_material_code_id_fkey foreign key (material_code_id) references material_codes (id) on delete set null,
+  constraint material_receive_items_dimension_id_fkey foreign key (dimension_id) references dimensions (id) on delete set null,
+  constraint material_receive_items_inventory_id_fkey foreign key (material_inventory_id) references material_inventory (id) on delete set null,
+  constraint material_receive_items_quantities_check check (prepared_quantity > 0 and COALESCE(rejected_quantity, 0) >= 0)
+) tablespace pg_default;
+
+create index if not exists idx_material_receive_items_receive on public.material_receive_items using btree (material_receive_id) tablespace pg_default;
+create index if not exists idx_material_receive_items_template on public.material_receive_items using btree (material_template_id) tablespace pg_default;
+create index if not exists idx_material_receive_items_material_code on public.material_receive_items using btree (material_code_id) tablespace pg_default;
+create index if not exists idx_material_receive_items_dimension on public.material_receive_items using btree (dimension_id) tablespace pg_default;
+create index if not exists idx_material_receive_items_inventory on public.material_receive_items using btree (material_inventory_id) tablespace pg_default;
+create index if not exists idx_material_receive_items_lot on public.material_receive_items using btree (lot_number) tablespace pg_default where (lot_number is not null);
+
+comment on table public.material_receive_items is 'Line items for material receives - 3-step process: prepare, receive check, acknowledge';
+comment on column public.material_receive_items.material_inventory_id is 'Links to the inventory record that was created or updated by this receive';
+comment on column public.material_receive_items.unit_of_measure_th is 'Thai unit names: ตัว, เส้น, กระป๋อง, แผ่น, ชิ้น, กล่อง, ถุง, etc.';
+comment on column public.material_receive_items.prepared_quantity is 'Step 5.1: Quantity prepared/expected';
+comment on column public.material_receive_items.received_quantity is 'Step 5.2: Actual quantity received (default from prepared_quantity)';
+comment on column public.material_receive_items.rejected_quantity is 'Step 5.2: Quantity rejected (default 0)';
+comment on column public.material_receive_items.accepted_quantity is 'Auto-calculated: received_quantity - rejected_quantity';
+comment on column public.material_receive_items.material_code_id is 'User-defined material code - auto-filled if inventory exists, manual selection if new item';
+comment on column public.material_receive_items.specific_detail is 'Optional specific detail for this item variant (e.g., Hot dip, Galvanized, Color, etc.)';
+comment on column public.material_receive_items.material_code_id is 'User-defined material code - auto-filled if inventory exists, manual selection if new item';

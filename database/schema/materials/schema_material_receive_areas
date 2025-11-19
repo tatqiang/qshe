@@ -1,0 +1,36 @@
+-- Material Receive Areas: Support multiple area locations per material receive (like patrol records)
+create table public.material_receive_areas (
+  id uuid not null default gen_random_uuid(),
+  material_receive_id uuid not null,
+  
+  -- Area hierarchy (same as patrol area inputs)
+  main_area_id uuid null, -- FK to main_areas
+  sub_area_1_id uuid null, -- FK to sub_areas_1
+  sub_area_2_id uuid null, -- FK to sub_areas_2
+  specific_location text null, -- e.g., "North wall, near column A1"
+  
+  -- Metadata
+  display_order integer null default 1, -- For sorting multiple areas
+  created_by uuid null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  
+  constraint material_receive_areas_pkey primary key (id),
+  constraint material_receive_areas_receive_id_fkey foreign key (material_receive_id) references material_receives (id) on delete cascade,
+  constraint material_receive_areas_main_area_id_fkey foreign key (main_area_id) references main_areas (id) on delete set null,
+  constraint material_receive_areas_sub_area_1_id_fkey foreign key (sub_area_1_id) references sub_areas_1 (id) on delete set null,
+  constraint material_receive_areas_sub_area_2_id_fkey foreign key (sub_area_2_id) references sub_areas_2 (id) on delete set null
+) tablespace pg_default;
+
+create index if not exists idx_material_receive_areas_receive on public.material_receive_areas using btree (material_receive_id) tablespace pg_default;
+create index if not exists idx_material_receive_areas_main_area on public.material_receive_areas using btree (main_area_id) tablespace pg_default;
+create index if not exists idx_material_receive_areas_sub_area_1 on public.material_receive_areas using btree (sub_area_1_id) tablespace pg_default;
+create index if not exists idx_material_receive_areas_sub_area_2 on public.material_receive_areas using btree (sub_area_2_id) tablespace pg_default;
+create index if not exists idx_material_receive_areas_order on public.material_receive_areas using btree (material_receive_id, display_order) tablespace pg_default;
+
+comment on table public.material_receive_areas is 'Material receive area locations - supports multiple areas per receive (like patrol area inputs)';
+comment on column public.material_receive_areas.main_area_id is 'Main Area (e.g., Building A, Yard 2)';
+comment on column public.material_receive_areas.sub_area_1_id is 'Sub Area 1 (e.g., Floor 2, Office Wing) - requires Main Area';
+comment on column public.material_receive_areas.sub_area_2_id is 'Sub Area 2 (e.g., Room 201, Workstation A) - requires Sub Area 1';
+comment on column public.material_receive_areas.specific_location is 'Specific location detail (e.g., North wall, near column A1)';
+comment on column public.material_receive_areas.display_order is 'Display order for multiple areas in the list';

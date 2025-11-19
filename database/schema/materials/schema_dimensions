@@ -1,0 +1,24 @@
+create table public.dimensions (
+  id serial not null,
+  dimension_group_id integer null,
+  size_1 character varying(100) not null,
+  size_2 character varying(100) null,
+  size_3 character varying(100) null,
+  dimension_type character varying(50) null default 'common'::character varying,
+  display_order integer null default 0,
+  description text null,
+  remark text null,
+  is_active boolean null default true,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint dimensions_pkey primary key (id),
+  constraint dimensions_dimension_group_id_fkey foreign KEY (dimension_group_id) references dimension_groups (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_dimensions_group on public.dimensions using btree (dimension_group_id) TABLESPACE pg_default;
+
+create index IF not exists idx_dimensions_type on public.dimensions using btree (dimension_type) TABLESPACE pg_default;
+
+create index IF not exists idx_dimensions_active on public.dimensions using btree (is_active) TABLESPACE pg_default;
+
+create index IF not exists idx_dimensions_order on public.dimensions using btree (display_order) TABLESPACE pg_default;

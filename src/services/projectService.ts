@@ -54,13 +54,28 @@ export const projectService = {
   async getActive(user: User | null = null): Promise<Project[]> {
     const allProjects = await this.getAll()
     
+    console.log('🔍 getActive - Total projects:', allProjects.length)
+    console.log('👤 User role:', user?.role || 'no user')
+    console.log('📋 All projects:', allProjects.map(p => ({ name: p.name, status: p.status, is_test: p.is_test_project })))
+    
     // Filter active projects
     let activeProjects = allProjects.filter(p => p.status === 'active')
+    console.log('✅ Active projects:', activeProjects.length)
+    console.log('📋 Active projects list:', activeProjects.map(p => ({ name: p.name, is_test: p.is_test_project })))
     
     // Hide test projects from non-admin users
-    if (!user || user.role !== 'system_admin') {
+    const isAdmin = user?.role === 'system_admin'
+    console.log('🔐 Is admin:', isAdmin)
+    
+    if (!isAdmin) {
+      const beforeFilter = activeProjects.length
       activeProjects = activeProjects.filter(p => p.is_test_project !== true)
+      console.log(`🎭 Filtered test projects: ${beforeFilter} -> ${activeProjects.length}`)
+    } else {
+      console.log('👑 Admin user - showing all active projects including test projects')
     }
+    
+    console.log('📊 Final projects to show:', activeProjects.map(p => p.name))
     
     return activeProjects
   },

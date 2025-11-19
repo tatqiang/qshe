@@ -43,6 +43,7 @@ export const useProjectStore = defineStore('project', () => {
     loading.value = true
     error.value = null
     try {
+      console.log('🏪 projectStore.loadActiveProjects - Passing user:', user)
       projects.value = await projectService.getActive(user)
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Unknown error'

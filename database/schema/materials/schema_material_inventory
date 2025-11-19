@@ -1,0 +1,166 @@
+create table public.material_inventory (
+  id uuid not null default gen_random_uuid (),
+  inventory_code text not null default (
+    'INV-'::text || to_char(now(), 'YYYYMMDD-HH24MISS-MS'::text)
+  ),
+  material_template_id integer not null,
+  material_code_id uuid null,
+  store_id uuid not null,
+  project_id uuid not null,
+  company_id uuid null,
+  dimension_id integer null,
+  material_description text not null,
+  material_description_th text null,
+  specific_detail text null,
+  technical_specs jsonb null,
+  unit_of_measure text null default 'PCS'::text,
+  current_quantity numeric(15, 3) null default 0,
+  reserved_quantity numeric(15, 3) null default 0,
+  available_quantity numeric GENERATED ALWAYS as ((current_quantity - reserved_quantity)) STORED (15, 3) null,
+  min_stock_level numeric(10, 2) null default 0,
+  max_stock_level numeric(10, 2) null,
+  reorder_point numeric(10, 2) null,
+  average_cost numeric(15, 2) null default 0,
+  last_purchase_cost numeric(15, 2) null,
+  requires_lot_tracking boolean null default false,
+  requires_serial_tracking boolean null default false,
+  requires_expiry_tracking boolean null default false,
+  shelf_life_days integer null,
+  barcode text null,
+  qr_code text null,
+  primary_picture_url text null,
+  bin_location text null,
+  rack_location text null,
+  is_active boolean null default true,
+  created_by text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  brand_id uuid null,
+  additional_info text null,
+  constraint material_inventory_pkey primary key (id),
+  constraint material_inventory_code_key unique (inventory_code),
+  constraint material_inventory_barcode_key unique (barcode),
+  constraint material_inventory_dimension_id_fkey foreign KEY (dimension_id) references dimensions (id) on delete set null,
+  constraint material_inventory_material_code_id_fkey foreign KEY (material_code_id) references material_codes (id) on delete set null,
+  constraint material_inventory_material_template_id_fkey foreign KEY (material_template_id) references material_templates (id) on delete RESTRICT,
+  constraint material_inventory_project_id_fkey foreign KEY (project_id) references projects (id) on delete CASCADE,
+  constraint material_inventory_store_id_fkey foreign KEY (store_id) references stores (id) on delete RESTRICT,
+  constraint material_inventory_brand_id_fkey foreign KEY (brand_id) references brands (id) on delete set null,
+  constraint material_inventory_company_id_fkey foreign KEY (company_id) references companies (id) on delete set null,
+  constraint material_inventory_quantities_check check (
+    (
+      (current_quantity >= (0)::numeric)
+      and (reserved_quantity >= (0)::numeric)
+    )
+  )
+) TABLESPACE pg_default;
+
+create index IF not exists idx_material_inventory_template on public.material_inventory using btree (material_template_id) TABLESPACE pg_default;
+
+create index IF not exists idx_material_inventory_material_code on public.material_inventory using btree (material_code_id) TABLESPACE pg_default;
+
+create index IF not exists idx_material_inventory_store on public.material_inventory using btree (store_id) TABLESPACE pg_default;
+
+create index IF not exists idx_material_inventory_project on public.material_inventory using btree (project_id) TABLESPACE pg_default;
+
+create index IF not exists idx_material_inventory_company on public.material_inventory using btree (company_id) TABLESPACE pg_default;
+
+create index IF not exists idx_material_inventory_dimension on public.material_inventory using btree (dimension_id) TABLESPACE pg_default;
+
+create index IF not exists idx_material_inventory_barcode on public.material_inventory using btree (barcode) TABLESPACE pg_default
+where
+  (barcode is not null);
+
+create index IF not exists idx_material_inventory_active on public.material_inventory using btree (is_active) TABLESPACE pg_default;
+
+create index IF not exists idx_material_inventory_description on public.material_inventory using gin (
+  to_tsvector('english'::regconfig, material_description)
+) TABLESPACE pg_default;
+
+create index IF not exists idx_material_inventory_brand on public.material_inventory using btree (brand_id) TABLESPACE pg_default;
+
+-- -- Material Inventory: Actual physical materials in stores (replaces materials table concept)
+-- -- Materials can only be added through Material Receive process (3-step workflow)
+-- create table public.material_inventory (
+--   id uuid not null default gen_random_uuid(),
+--   inventory_code character varying(50) not null default (
+--     'INV-'::text || to_char(now(), 'YYYYMMDD-HH24MISS-MS'::text)
+--   ),
+--   material_template_id integer not null, -- Links to master catalog
+--   material_code_id uuid null, -- Links to user-defined material code
+--   brand_id uuid null, -- Links to brand
+--   store_id uuid not null, -- Physical location (REQUIRED)
+--   project_id uuid not null,
+--   company_id uuid null,
+--   dimension_id integer null, -- Specific dimension variant
+  
+--   -- Description can be overridden from template for this specific inventory item
+--   material_description text not null,
+--   material_description_th text null,
+--   specific_detail text null, -- User-added specific detail (e.g., 'Hot dip' for steel clamp)
+--   technical_specs jsonb null,
+  
+--   -- Inventory tracking
+--   unit_of_measure character varying(50) null default 'PCS'::character varying,
+--   current_quantity numeric(15, 3) null default 0,
+--   reserved_quantity numeric(15, 3) null default 0, -- Reserved for jobs/requisitions
+--   available_quantity numeric(15, 3) generated always as (current_quantity - reserved_quantity) stored,
+  
+--   -- Stock levels
+--   min_stock_level numeric(10, 2) null default 0,
+--   max_stock_level numeric(10, 2) null,
+--   reorder_point numeric(10, 2) null,
+  
+--   -- Cost tracking
+--   average_cost numeric(15, 2) null default 0,
+--   last_purchase_cost numeric(15, 2) null,
+  
+--   -- Tracking requirements
+--   requires_lot_tracking boolean null default false,
+--   requires_serial_tracking boolean null default false,
+--   requires_expiry_tracking boolean null default false,
+--   shelf_life_days integer null,
+  
+--   -- Identification
+--   barcode character varying(100) null,
+--   qr_code text null,
+--   primary_picture_url character varying(500) null,
+  
+--   -- Location within store
+--   bin_location character varying(100) null,
+--   rack_location character varying(100) null,
+  
+--   is_active boolean null default true,
+--   created_by character varying(50) null,
+--   created_at timestamp with time zone null default now(),
+--   updated_at timestamp with time zone null default now(),
+  
+--   constraint material_inventory_pkey primary key (id),
+--   constraint material_inventory_code_key unique (inventory_code),
+--   constraint material_inventory_template_store_dimension_key unique (material_template_id, store_id, dimension_id),
+--   constraint material_inventory_material_template_id_fkey foreign key (material_template_id) references material_templates (id) on delete restrict,
+--   constraint material_inventory_material_code_id_fkey foreign key (material_code_id) references material_codes (id) on delete set null,
+--   constraint material_inventory_brand_id_fkey foreign key (brand_id) references brands (id) on delete set null,
+--   constraint material_inventory_store_id_fkey foreign key (store_id) references stores (id) on delete restrict,
+--   constraint material_inventory_project_id_fkey foreign key (project_id) references projects (id) on delete cascade,
+--   constraint material_inventory_company_id_fkey foreign key (company_id) references companies (id) on delete set null,
+--   constraint material_inventory_dimension_id_fkey foreign key (dimension_id) references dimensions (id) on delete set null,
+--   constraint material_inventory_quantities_check check (current_quantity >= 0 and reserved_quantity >= 0)
+-- ) tablespace pg_default;
+
+-- create index if not exists idx_material_inventory_template on public.material_inventory using btree (material_template_id) tablespace pg_default;
+-- create index if not exists idx_material_inventory_brand on public.material_inventory using btree (brand_id) tablespace pg_default;
+-- create index if not exists idx_material_inventory_store on public.material_inventory using btree (store_id) tablespace pg_default;
+-- create index if not exists idx_material_inventory_project on public.material_inventory using btree (project_id) tablespace pg_default;
+-- create index if not exists idx_material_inventory_company on public.material_inventory using btree (company_id) tablespace pg_default;
+-- create index if not exists idx_material_inventory_dimension on public.material_inventory using btree (dimension_id) tablespace pg_default;
+-- create index if not exists idx_material_inventory_barcode on public.material_inventory using btree (barcode) tablespace pg_default where (barcode is not null);
+-- create index if not exists idx_material_inventory_active on public.material_inventory using btree (is_active) tablespace pg_default;
+-- create index if not exists idx_material_inventory_description on public.material_inventory using gin (
+--   to_tsvector('english'::regconfig, material_description)
+-- ) tablespace pg_default;
+
+-- comment on table public.material_inventory is 'Physical materials in stores - can only be added via Material Receive process';
+-- comment on column public.material_inventory.available_quantity is 'Auto-calculated: current_quantity - reserved_quantity';
+-- comment on column public.material_inventory.specific_detail is 'User-added specific detail for this inventory item (e.g., Hot dip, Galvanized, Red color, etc.)';
+-- comment on column public.material_inventory.material_template_id is 'Links to master template - NOTE: Same template can have multiple inventory records with different material_code, specific_detail, or unit';

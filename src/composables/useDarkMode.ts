@@ -1,44 +1,35 @@
-import { ref, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 
-// FORCE light mode by clearing any saved preference
-if (typeof window !== 'undefined') {
-  localStorage.removeItem('darkMode')
-  localStorage.removeItem('qshe-theme')
-  document.documentElement.classList.remove('dark')
+// Initialize dark mode state from localStorage or system preference
+const savedMode = typeof window !== 'undefined' ? localStorage.getItem('darkMode') : null
+const isDark = ref(savedMode === 'true')
+
+// Update DOM and localStorage whenever isDark changes
+const updateDarkMode = () => {
+  if (typeof window === 'undefined') return
+  
+  if (isDark.value) {
+    document.documentElement.classList.add('dark')
+    localStorage.setItem('darkMode', 'true')
+  } else {
+    document.documentElement.classList.remove('dark')
+    localStorage.setItem('darkMode', 'false')
+  }
 }
 
-// Initialize dark mode state - now forced to false
-const isDark = ref(false)
+// Watch for changes and update DOM
+watch(isDark, () => {
+  updateDarkMode()
+}, { immediate: true })
 
 export function useDarkMode() {
   const toggleDarkMode = () => {
     isDark.value = !isDark.value
-    updateDarkMode()
   }
 
   const setDarkMode = (value: boolean) => {
     isDark.value = value
-    updateDarkMode()
   }
-
-  const updateDarkMode = () => {
-    if (isDark.value) {
-      document.documentElement.classList.add('dark')
-      localStorage.setItem('darkMode', 'true')
-    } else {
-      document.documentElement.classList.remove('dark')
-      localStorage.setItem('darkMode', 'false')
-    }
-  }
-
-  const initDarkMode = () => {
-    // Re-apply the current state
-    updateDarkMode()
-  }
-
-  onMounted(() => {
-    initDarkMode()
-  })
 
   return {
     isDark,
