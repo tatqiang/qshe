@@ -18,6 +18,7 @@ const allMenuItems = [
   { id: 'patrol', label: 'Patrol', icon: 'clipboard', route: '/patrol' },
   { id: 'risk', label: 'Risk Assessment', icon: 'warning', route: '/risk-assessment' },
   { id: 'materials', label: 'Materials', icon: 'cube', route: '/materials' },
+  { id: 'project-planning', label: 'Project Planning', icon: 'calendar', route: '/project-planning' },
   { id: 'material-config', label: 'Material Config', icon: 'cog', route: '/admin/material-config', requiresAdmin: true },
   { id: 'system', label: 'System', icon: 'settings', route: '/system', requiresAdmin: true }
 ]
@@ -92,6 +93,11 @@ const navigateTo = (routePath: string) => {
               <!-- Cube Icon (Materials) -->
               <svg v-if="item.icon === 'cube'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+              
+              <!-- Calendar Icon (Project Planning) -->
+              <svg v-if="item.icon === 'calendar'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               
               <!-- Cog Icon (Material Config) -->

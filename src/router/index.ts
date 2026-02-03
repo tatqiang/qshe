@@ -100,6 +100,18 @@ const routes: RouteRecordRaw[] = [
     name: 'admin-material-config',
     component: () => import('@/views/admin/MaterialConfigView.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/project-planning',
+    name: 'project-planning',
+    component: () => import('@/views/ProjectPlanningView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/construction-planning',
+    name: 'construction-planning',
+    component: () => import('@/views/ConstructionPlanningView.vue'),
+    meta: { requiresAuth: false } // Google Auth is separate from main auth
   }
 ]
 

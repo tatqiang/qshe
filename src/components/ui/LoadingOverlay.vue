@@ -3,8 +3,8 @@
     <Transition name="overlay">
       <div 
         v-if="show" 
-        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-        style="backdrop-filter: blur(2px);"
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+        style="backdrop-filter: blur(2px); z-index: 9999;"
       >
         <div class="bg-white dark:bg-gray-800 rounded-lg p-8 shadow-2xl max-w-md mx-4">
           <div class="flex flex-col items-center">

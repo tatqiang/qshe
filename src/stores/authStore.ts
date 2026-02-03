@@ -79,6 +79,40 @@ export const useAuthStore = defineStore('auth', () => {
         } else if (data) {
           user.value = data
           console.log('✅ User loaded from database:', data.email, 'Role:', data.role)
+          
+          // ✅ CRITICAL: Create Supabase session for Azure AD user
+          try {
+            // Generate a temporary password (won't be used for login)
+            const tempPassword = `azure-${data.id}-${Date.now()}`
+            
+            // Try to sign in with Supabase (will create session)
+            const { error: signInError } = await supabase.auth.signInWithPassword({
+              email: data.email,
+              password: tempPassword
+            })
+            
+            if (signInError?.message.includes('Invalid login credentials')) {
+              // User exists in auth.users but password is wrong (expected for Azure users)
+              // Create a custom session by updating the user's password temporarily
+              console.log('📝 Creating Supabase session for Azure user...')
+              
+              // Use the RPC function to create session
+              const { data: sessionData, error: sessionError } = await supabase.rpc('create_azure_session', {
+                p_user_id: data.id,
+                p_email: data.email
+              })
+              
+              if (!sessionError && sessionData) {
+                console.log('✅ Supabase session created for Azure AD user')
+              } else {
+                console.warn('⚠️ Could not create session (non-critical):', sessionError)
+              }
+            } else if (!signInError) {
+              console.log('✅ Supabase auth session established')
+            }
+          } catch (authErr) {
+            console.warn('⚠️ Session creation skipped:', authErr)
+          }
         }
       } catch (dbErr) {
         console.warn('Supabase error (might not be configured):', dbErr)
