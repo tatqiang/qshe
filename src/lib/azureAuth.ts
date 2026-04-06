@@ -9,7 +9,10 @@ const msalConfig = {
     navigateToLoginRequestUrl: true
   },
   cache: {
-    cacheLocation: 'localStorage' as const,
+    // Use sessionStorage so MSAL tokens don't compete with form data in
+    // localStorage and cause cache_quota_exceeded on login.
+    // storeAuthStateInCookie covers mobile / Safari ITP as a fallback.
+    cacheLocation: 'sessionStorage' as const,
     storeAuthStateInCookie: true // Enable cookies for mobile support
   },
   system: {
